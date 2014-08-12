@@ -170,11 +170,11 @@ log "rsync backups complete"
 log "Deleting old local backups"
 
 #If file is older than 1 week and not created on a monday then delete it
-/usr/bin/find ${LOCALDIR} -name ".tgz.enc"  -type f -mmin +${LOCALAGEDAILIES} -exec sh -c 'test $(date +%a -r "$1") = Mon || echo rm "$1"' -- {} \;
+/usr/bin/find ${LOCALDIR} -name ".tgz.enc"  -type f -mmin +${LOCALAGEDAILIES} -exec sh -c '/usr/bin/test $(date +%a -r "$1") = Mon || /bin/rm "$1"' -- {} \;
 
 #If the file is older than 28 days and  not from first monday of month
 
-/usr/bin/find ${LOCALDIR} -name ".tgz.enc"  -type f -mtime +${LOCALAGEWEEKLIES} -exec sh -c 'test $(date +%d -r "$1") -le 7 -a $(date +%a -r "$1") = Mon || echo rm "$1"' -- {} \;
+/usr/bin/find ${LOCALDIR} -name ".tgz.enc"  -type f -mtime +${LOCALAGEWEEKLIES} -exec sh -c '/usr/bin/test $(date +%d -r "$1") -le 7 -a $(date +%a -r "$1") = Mon || /bin/rm "$1"' -- {} \;
 
 #If file is older than 6 months delete it
 
