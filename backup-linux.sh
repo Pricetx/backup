@@ -19,11 +19,23 @@ LOGFILE="/root/backups/backup.log"
 # The X509 certificate to encrypt the backup
 CRTFILE="/root/NAME_OF_CERT.crt"
 
-# The time (in minutes) to store local backups for
-LOCALAGE="10080"
+# The time (in minutes) to store daily local backups for
+LOCALAGEDAILIES="10080"
 
-# The time (in minutes) to store remote backups for
-REMOTEAGE="10080"
+# The time (in minutes) to store daily remote backups for
+REMOTEAGEDAILIES="10080"
+
+# The time (in days) to store weekly local backups for
+LOCALAGEWEEKLIES="28"
+
+# The time (in days) to store weekly remote backups for
+REMOTEAGEWEEKLIES="28"
+
+# The time (in minutes) to store local backups for at maximum
+LOCALAGEMAX="172800"
+
+# The time (in minutes) to store remote backups for at maximum
+REMOTEAGEMAX="172800"
 
 # IP / hostname of the server to store remote backups
 REMOTESERVER="REMOTE_SERVER_HERE"
@@ -155,14 +167,22 @@ done
 log "rsync backups complete"
 ### END OF RSYNC BACKUP
 
-
-
 log "Deleting old local backups"
-# Deletes backups older than 1 week
-/usr/bin/find ${LOCALDIR} -name "*.tgz.enc" -mmin +${LOCALAGE} -exec /bin/rm {} \;
+
+#If file is older than 1 week and not created on a monday then delete it
+/usr/bin/find ${LOCALDIR} -name ".tgz.enc"  -type f -mmin +${LOCALAGEDAILIES} -exec sh -c 'test $(date +%a -r "$1") = Mon || echo rm "$1"' -- {} \;
+
+#If the file is older than 28 days and  not from first monday of month
+
+/usr/bin/find ${LOCALDIR} -name ".tgz.enc"  -type f -mtime +${LOCALAGEWEEKLIES} -exec sh -c 'test $(date +%d -r "$1") -le 7 -a $(date +%a -r "$1") = Mon || echo rm "$1"' -- {} \;
+
+#If file is older than 6 months delete it
+
+/usr/bin/find ${LOCALDIR} -name "*.tgz.enc" -mmin +${LOCALAGEMAX} -exec /bin/rm {} \;
 
 log "Deleting old remote backups"
-/usr/bin/ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "/usr/bin/find ${REMOTEDIR} -name \"*tgz.enc\" -mmin +${REMOTEAGE} -exec /bin/rm {} \;"
+
+#delete old backups part goes here
 
 ENDTIME=`date +%s`
 DURATION=$((ENDTIME - STARTTIME))
