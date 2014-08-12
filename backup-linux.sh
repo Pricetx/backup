@@ -150,7 +150,7 @@ fi
 ### RSYNC BACKUP ###
 log "Starting rsync backups"
 for i in ${RSYNCDIR[@]}; do
-        /usr/bin/rsync -avz --no-links --progress --delete --relative -e"ssh -p ${REMOTEPORT}" $i ${REMOTEUSER}@${REMOTESERVER}:${REMOTEDIR}
+        /usr/bin/rsync -avz --no-links --progress --delete --relative -e"/usr/bin/ssh -p ${REMOTEPORT}" $i ${REMOTEUSER}@${REMOTESERVER}:${REMOTEDIR}
 done
 log "rsync backups complete"
 ### END OF RSYNC BACKUP
