@@ -131,17 +131,17 @@ done
 log "Encryption completed"
 
 # Delete unencrypted tar
-rm ${TARFILE}
+/bin/rm ${TARFILE}
 
 log "Tar backup complete. Filesize: `du -h ${TARFILE}.enc | cut -f1`"
 
 log "Tranferring tar backup to remote server"
-scp -P ${REMOTEPORT} ${TARFILE}.enc ${REMOTEUSER}@${REMOTESERVER}:${REMOTEDIR}
+/usr/bin/scp -P ${REMOTEPORT} ${TARFILE}.enc ${REMOTEUSER}@${REMOTESERVER}:${REMOTEDIR}
 log "File transfer completed"
 
 if [ -f /usr/local/bin/mysql ]; then
         log "Deleting temporary MySQL backup"
-        rm ${SQLFILE}
+        /bin/rm ${SQLFILE}
 fi
 ### END OF TAR BACKUP ###
 
@@ -150,7 +150,7 @@ fi
 ### RSYNC BACKUP ###
 log "Starting rsync backups"
 for i in ${RSYNCDIR[@]}; do
-        /usr/local/bin/rsync -avz --no-links --progress --delete --relative -e"ssh -p ${REMOTEPORT}" $i ${REMOTEUSER}@${REMOTESERVER}:${REMOTEDIR}
+        /usr/local/bin/rsync -avz --no-links --progress --delete --relative -e"/usr/bin/ssh -p ${REMOTEPORT}" $i ${REMOTEUSER}@${REMOTESERVER}:${REMOTEDIR}
 done
 log "rsync backups complete"
 ### END OF RSYNC BACKUP
@@ -162,7 +162,7 @@ log "Deleting old local backups"
 /usr/bin/find ${LOCALDIR} -name "*.tgz.enc" -mmin +${LOCALAGE} -exec rm {} \;
 
 log "Deleting old remote backups"
-/usr/bin/ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "/usr/bin/find ${REMOTEDIR} -name \"*tgz.enc\" -mmin +${REMOTEAGE} -exec rm {} \;"
+/usr/bin/ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "/usr/bin/find ${REMOTEDIR} -name \"*tgz.enc\" -mmin +${REMOTEAGE} -exec /bin/rm {} \;"
 
 ENDTIME=`date +%s`
 DURATION=$((ENDTIME - STARTTIME))
