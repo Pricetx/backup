@@ -119,7 +119,7 @@ fi
 ### TAR BACKUP ###
 log "Starting tar backup dated ${BACKUPDATE}"
 # Prepare tar command
-TARCMD="-zcf ${TARFILE} ${BACKUP[*]}"
+TARCMD="zcf ${TARFILE} ${BACKUP[*]}"
 
 # Add exclusions to front of command
 for i in ${EXCLUDE[@]}; do
