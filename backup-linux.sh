@@ -62,7 +62,7 @@ RSYNCDIR[0]="/home/pricetx"
 ### DO NOT EDIT BELOW THIS LINE ###
 
 # Ensure that all possible binary paths are checked
-PATH = /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 
 log() {
         #log to screen and to logfile
