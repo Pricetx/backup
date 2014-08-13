@@ -61,6 +61,9 @@ RSYNCDIR[0]="/home/pricetx"
 ### END OF CONFIGURATION ###
 ### DO NOT EDIT BELOW THIS LINE ###
 
+# Ensure that all possible binary paths are checked
+PATH = /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+
 log() {
         #log to screen and to logfile
         echo $1
@@ -75,13 +78,13 @@ if [ ! -e $LOCALDIR ]; then
 elif [ ! -e $TEMPDIR ]; then
         log "${TEMPDIR} does not exist. Create it or fix the TEMPDIR variable"
         exit
-elif [ ! -f /usr/bin/openssl ]; then
+elif [ ! -f openssl ]; then
         log "openssl is not installed. Install it and try again"
         exit
 elif [ ! -e ${CRTFILE} ]; then
         log "X509 certificate not found. Create one or fix the CRTFILE variable."
         exit
-elif [ ! -f /usr/bin/rsync ]; then
+elif [ ! -f rsync ]; then
         log "rsync is not intalled. Install it and try again"
         exit
 fi
@@ -99,9 +102,9 @@ cd ${LOCALDIR}
 
 
 ### MYSQL BACKUP ###
-if [ -f /usr/bin/mysql ]; then
+if [ -f mysql ]; then
         log "Starting MySQL dump dated ${BACKUPDATE}"
-        /usr/bin/mysqldump -u root -p${ROOTMYSQL} --all-databases > ${SQLFILE}
+        mysqldump -u root -p${ROOTMYSQL} --all-databases > ${SQLFILE}
         log "MySQL dump complete"
 
         #Add MySQL backup to BACKUP list
@@ -124,25 +127,25 @@ for i in ${EXCLUDE[@]}; do
 done
 
 # Run tar
-/bin/tar ${TARCMD}
+tar ${TARCMD}
 
 # Encrypt tar file
 #log "Encrypting backup"
-/usr/bin/openssl smime -encrypt -aes256 -binary -in ${TARFILE} -out ${TARFILE}.enc -outform DER -stream ${CRTFILE}
+openssl smime -encrypt -aes256 -binary -in ${TARFILE} -out ${TARFILE}.enc -outform DER -stream ${CRTFILE}
 log "Encryption completed"
 
 # Delete unencrypted tar
-/bin/rm ${TARFILE}
+rm ${TARFILE}
 
 log "Tar backup complete. Filesize: `du -h ${TARFILE}.enc | cut -f1`"
 
 log "Tranferring tar backup to remote server"
-/usr/bin/scp -P ${REMOTEPORT} ${TARFILE}.enc ${REMOTEUSER}@${REMOTESERVER}:${REMOTEDIR}
+scp -P ${REMOTEPORT} ${TARFILE}.enc ${REMOTEUSER}@${REMOTESERVER}:${REMOTEDIR}
 log "File transfer completed"
 
-if [ -f /usr/bin/mysql ]; then
+if [ -f mysql ]; then
         log "Deleting temporary MySQL backup"
-        /bin/rm ${SQLFILE}
+        rm ${SQLFILE}
 fi
 ### END OF TAR BACKUP ###
 
@@ -151,7 +154,7 @@ fi
 ### RSYNC BACKUP ###
 log "Starting rsync backups"
 for i in ${RSYNCDIR[@]}; do
-        /usr/bin/rsync -avz --no-links --progress --delete --relative -e"/usr/bin/ssh -p ${REMOTEPORT}" $i ${REMOTEUSER}@${REMOTESERVER}:${REMOTEDIR}
+        rsync -avz --no-links --progress --delete --relative -e"ssh -p ${REMOTEPORT}" $i ${REMOTEUSER}@${REMOTESERVER}:${REMOTEDIR}
 done
 log "rsync backups complete"
 ### END OF RSYNC BACKUP
@@ -160,10 +163,10 @@ log "rsync backups complete"
 
 log "Deleting old local backups"
 # Deletes backups older than 1 week
-/usr/bin/find ${LOCALDIR} -name "*.tgz.enc" -mmin +${LOCALAGE} -exec /bin/rm {} \;
+find ${LOCALDIR} -name "*.tgz.enc" -mmin +${LOCALAGE} -exec rm {} \;
 
 log "Deleting old remote backups"
-/usr/bin/ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "/usr/bin/find ${REMOTEDIR} -name \"*tgz.enc\" -mmin +${REMOTEAGE} -exec /bin/rm {} \;"
+ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "find ${REMOTEDIR} -name \"*tgz.enc\" -mmin +${REMOTEAGE} -exec rm {} \;"
 
 ENDTIME=`date +%s`
 DURATION=$((ENDTIME - STARTTIME))
