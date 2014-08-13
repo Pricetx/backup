@@ -31,11 +31,11 @@ LOCALAGEWEEKLIES="28"
 # The time (in days) to store weekly remote backups for
 REMOTEAGEWEEKLIES="28"
 
-# The time (in minutes) to store local backups for at maximum
-LOCALAGEMAX="172800"
+# The time (in minutes) to store monthly local backups for
+LOCALAGEMONTHLIES="172800"
 
-# The time (in minutes) to store remote backups for at maximum
-REMOTEAGEMAX="172800"
+# The time (in minutes) to store monthly remote backups for
+REMOTEAGEMONTHLIES="172800"
 
 # IP / hostname of the server to store remote backups
 REMOTESERVER="REMOTE_SERVER_HERE"
@@ -170,15 +170,15 @@ log "rsync backups complete"
 log "Deleting old local backups"
 
 #If file is older than 1 week and not created on a monday then delete it
-/usr/bin/find ${LOCALDIR} -name ".tgz.enc"  -type f -mmin +${LOCALAGEDAILIES} -exec sh -c '/usr/bin/test $(date +%a -r "$1") = Mon || /bin/rm "$1"' -- {} \;
+/usr/bin/find ${LOCALDIR} -name ".tgz.enc"  -type f -mmin +${LOCALAGEDAILIES} -exec sh -c 'test $(date +%a -r "$1") = Mon || echo rm "$1"' -- {} \;
 
 #If the file is older than 28 days and  not from first monday of month
 
-/usr/bin/find ${LOCALDIR} -name ".tgz.enc"  -type f -mtime +${LOCALAGEWEEKLIES} -exec sh -c '/usr/bin/test $(date +%d -r "$1") -le 7 -a $(date +%a -r "$1") = Mon || /bin/rm "$1"' -- {} \;
+/usr/bin/find ${LOCALDIR} -name ".tgz.enc"  -type f -mtime +${LOCALAGEWEEKLIES} -exec sh -c 'test $(date +%d -r "$1") -le 7 -a $(date +%a -r "$1") = Mon || echo rm "$1"' -- {} \;
 
 #If file is older than 6 months delete it
 
-/usr/bin/find ${LOCALDIR} -name "*.tgz.enc" -mmin +${LOCALAGEMAX} -exec /bin/rm {} \;
+/usr/bin/find ${LOCALDIR} -name "*.tgz.enc" -mmin +${LOCALAGEMONTLIES} -exec /bin/rm {} \;
 
 log "Deleting old remote backups"
 
