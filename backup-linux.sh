@@ -182,7 +182,7 @@ find ${LOCALDIR} -name ".tgz.enc"  -type f -mtime +${LOCALAGEWEEKLIES} -exec sh 
 
 #If file is older than 6 months delete it
 
-find ${LOCALDIR} -name "*.tgz.enc" -mmin +${LOCALAGEMONTLIES} -exec rm {} \;
+find ${LOCALDIR} -name "*.tgz.enc" -mmin +${LOCALAGEMONTHLIES} -exec rm {} \;
 
 log "Deleting old remote backups"
 
