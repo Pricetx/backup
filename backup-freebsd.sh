@@ -48,6 +48,7 @@ BACKUP[1]="/etc/"
 
 # Files and directories to exclude from backup
 # To add new entries, just increment the number in brackets
+# NOTE: REMOVE ANY TRAILING SLASHES
 EXCLUDE[0]="/etc/master.passwd"
 
 
