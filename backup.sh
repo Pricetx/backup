@@ -1,109 +1,63 @@
 #!/usr/local/bin/bash
 
-### CONFIGURATION STUFF ###
-# ALL directories MUST have a trailing / (except for rsync)
-# To generate the private key: 'openssl genrsa -out [nameofkey].key -aes256 4096'
-# To generate the X509 certificate: 'openssl req -out [nameofkey].crt -new -key [nameofkey].key -x509'
-# To decrypt backups: 'openssl smime -decrypt -in [nameofbackup].tgz.enc -inform DER -inkey [nameofkey].key -out [nameofbackup].tgz'
-# KEEP THE PRIVATE KEY SAFE. It does not need to be kept on the server. If you lose it, you will NOT be able to unencrypt backups
-
-# Directory to store backups
-LOCALDIR="/root/backups/"
-
-# Temporary directory used during backup creation
-TEMPDIR="/root/backups/temp/"
-
-# File to log the outcome of backups
-LOGFILE="/root/backups/backup.log"
-
-# The X509 certificate to encrypt the backup
-CRTFILE="/root/NAME_OF_CERT.crt"
-
-# The time (in minutes) to store daily local backups for
-LOCALAGEDAILIES="10080"
-
-# The time (in minutes) to store daily remote backups for
-REMOTEAGEDAILIES="10080"
-
-# The time (in days) to store weekly local backups for
-LOCALAGEWEEKLIES="28"
-
-# The time (in days) to store weekly remote backups for
-REMOTEAGEWEEKLIES="28"
-
-# The time (in minutes) to store monthly local backups for
-LOCALAGEMONTHLIES="172800"
-
-# The time (in minutes) to store monthly remote backups for
-REMOTEAGEMONTHLIES="172800"
-
-# IP / hostname of the server to store remote backups
-REMOTESERVER="REMOTE_SERVER_HERE"
-
-# SSH port of remote server
-REMOTEPORT=22
-
-# User to use with SSH (public key needs to be installed remotely)
-REMOTEUSER="REMOTE_USER_HERE"
-
-# Path to store the remote backups
-REMOTEDIR="/BACKUP/PATH/ON/REMOTE/SYSTEM/"
-
-# OPTIONAL: If MySQL is being backed up, enter the root password below
-ROOTMYSQL=""
-
-
-# Files and directories to backup
-# To add new entries, just increment the number in brackets
-BACKUP[0]="/root/backup.sh"
-BACKUP[1]="/etc/"
-
-# Files and directories to exclude from backup
-# To add new entries, just increment the number in brackets
-# NOTE: REMOVE ANY TRAILING SLASHES
-EXCLUDE[0]="/etc/master.passwd"
-
-
-# Directories to rsync - these MUST NOT have a trailing /
-# To add new entries, just increment the number in brackets
-RSYNCDIR[0]="/home/pricetx"
-
-
-
-### END OF CONFIGURATION ###
-### DO NOT EDIT BELOW THIS LINE ###
-
 # Ensure that all possible binary paths are checked
 PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 
+# Provides the 'log' command to simultaneously log to
+# STDOUT and the log file with a single command
 log() {
-        #log to screen and to logfile
         echo $1
         echo `date -u +%Y-%m-%d-%H%M` $1 >> ${LOGFILE}
 }
 
+# Load the backup settings
+source ./backup.cfg
 
-# Check that all the required stuff exists
-if [ ! -e $LOCALDIR ]; then
-        log "${LOCALDIR} does not exist. Create it or fix the LOCALDIR variable"
+### CHECKS ###
+
+# This section checks for all of the binaries used in the backup
+BINARIES=( date find openssl rm rsync scp ssh tar )
+
+# Iterate over the list of binaries, and if one isn't found, abort
+for BINARY in ${BINARIES[@]}; do
+        if [ ! `command -v $BINARY` ]; then
+                log "$BINARY is not installed. Install it and try again"
+                exit
+        fi
+done
+
+# Check if the backup folders exist and are writeable
+# also, check if the OpenSSL X509 certificate exists
+if [ ! -w $LOCALDIR ]; then
+        log "${LOCALDIR} either doesn't exist or isn't writable"
+        log "Either fix or replace the LOCALDIR setting"
         exit
-elif [ ! -e $TEMPDIR ]; then
-        log "${TEMPDIR} does not exist. Create it or fix the TEMPDIR variable"
+elif [ ! -w $TEMPDIR ]; then
+        log "${TEMPDIR} either doesn't exist or isn't writable"
+        log "Either fix or replace the TEMPDIR setting"
         exit
-elif [ ! -f openssl ]; then
-        log "openssl is not installed. Install it and try again"
-        exit
-elif [ ! -e ${CRTFILE} ]; then
-        log "X509 certificate not found. Create one or fix the CRTFILE variable."
-        exit
-elif [ ! -f rsync ]; then
-        log "rsync is not intalled. Install it and try again"
+elif [ ! -r ${CRTFILE} ]; then
+        log "${CRTFILE} either doesn't exist or isn't readable"
+        log "Either fix or replace the CRTFILE setting"
         exit
 fi
 
+# Check that SSH login to remote server is successful
+if [ ! `ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} echo test` ]; then
+        log "Failed to login to ${REMOTEUSER}@${REMOTESERVER}"
+        log "Make sure that your public key is in their authorized_keys"
+        exit
+fi
 
+# Check that remote directory exists and is writeable
+if [ `ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} touch ${REMOTEDIR}/test` ]; then
+        log "Failed to write to ${REMOTEDIR} on ${REMOTESERVER}"
+        log "Check file permissions and that ${REMOTEDIR} is correct"
+        exit
+else
+        ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} rm ${REMOTEDIR}/test
+fi
 
-### VARIABLES - DO NOT EDIT ###
 BACKUPDATE=`date -u +%Y-%m-%d-%H%M`
 STARTTIME=`date +%s`
 TARFILE="${LOCALDIR}`hostname`-${BACKUPDATE}.tgz"
@@ -111,27 +65,30 @@ SQLFILE="${TEMPDIR}mysql_${BACKUPDATE}.sql"
 
 cd ${LOCALDIR}
 
-
+### END OF CHECKS ###
 
 ### MYSQL BACKUP ###
-if [ -f mysql ]; then
+
+if [ ! `command -v mysqldump` ]; then
+        log "mysqldump not found, not backing up MySQL!"
+elif [ -z $ROOTMYSQL ]; then
+        log "MySQL root password not set, not backing up MySQL!"
+else
         log "Starting MySQL dump dated ${BACKUPDATE}"
         mysqldump -u root -p${ROOTMYSQL} --all-databases > ${SQLFILE}
         log "MySQL dump complete"
 
         #Add MySQL backup to BACKUP list
         BACKUP=(${BACKUP[*]} ${SQLFILE})
-else
-        log "MySQL not found, not backing up MySQL!"
 fi
+
 ### END OF MYSQL BACKUP ###
 
-
-
 ### TAR BACKUP ###
+
 log "Starting tar backup dated ${BACKUPDATE}"
 # Prepare tar command
-TARCMD="zcf ${TARFILE} ${BACKUP[*]}"
+TARCMD="-zcf ${TARFILE} ${BACKUP[*]}"
 
 # Add exclusions to front of command
 for i in ${EXCLUDE[@]}; do
@@ -142,54 +99,46 @@ done
 tar ${TARCMD}
 
 # Encrypt tar file
-#log "Encrypting backup"
+log "Encrypting backup"
 openssl smime -encrypt -aes256 -binary -in ${TARFILE} -out ${TARFILE}.enc -outform DER -stream ${CRTFILE}
 log "Encryption completed"
 
 # Delete unencrypted tar
 rm ${TARFILE}
 
-log "Tar backup complete. Filesize: `du -h ${TARFILE}.enc | cut -f1`"
+BACKUPSIZE=`du -h ${TARFILE}.enc | cut -f1`
+log "Tar backup complete. Filesize: ${BACKUPSIZE}"
 
 log "Tranferring tar backup to remote server"
 scp -P ${REMOTEPORT} ${TARFILE}.enc ${REMOTEUSER}@${REMOTESERVER}:${REMOTEDIR}
 log "File transfer completed"
 
-if [ -f mysql ]; then
+if [ ! `command -v mysqldump` ]; then
         log "Deleting temporary MySQL backup"
         rm ${SQLFILE}
 fi
 ### END OF TAR BACKUP ###
 
-
-
 ### RSYNC BACKUP ###
+
 log "Starting rsync backups"
 for i in ${RSYNCDIR[@]}; do
         rsync -avz --no-links --progress --delete --relative -e"ssh -p ${REMOTEPORT}" $i ${REMOTEUSER}@${REMOTESERVER}:${REMOTEDIR}
 done
 log "rsync backups complete"
-### END OF RSYNC BACKUP
+
+### END OF RSYNC BACKUP ###
+
+### BACKUP DELETION ##
 
 log "Deleting old local backups"
-
-#If file is older than 1 week and not created on a monday then delete it
-find ${LOCALDIR} -name ".tgz.enc"  -type f -mmin +${LOCALAGEDAILIES} -exec sh -c 'test $(date +%a -r "$1") = Mon || rm "$1"' -- {} \;
-
-#If the file is older than 28 days and  not from first monday of month
-
-find ${LOCALDIR} -name ".tgz.enc"  -type f -mtime +${LOCALAGEWEEKLIES} -exec sh -c 'test $(date +%d -r "$1") -le 7 -a $(date +%a -r "$1") = Mon || rm "$1"' -- {} \;
-
-#If file is older than 6 months delete it
-
-find ${LOCALDIR} -name "*.tgz.enc" -mmin +${LOCALAGEMONTHLIES} -exec rm {} \;
+# Deletes backups older than 1 week
+find ${LOCALDIR} -name "*.tgz.enc" -mmin +${LOCALAGE} -exec rm {} \;
 
 log "Deleting old remote backups"
-
-#delete old backups part goes here
-
 ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "find ${REMOTEDIR} -name \"*tgz.enc\" -mmin +${REMOTEAGE} -exec rm {} \;"
 
+### END OF BACKUP DELETION ###
 
 ENDTIME=`date +%s`
 DURATION=$((ENDTIME - STARTTIME))
