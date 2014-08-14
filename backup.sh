@@ -140,11 +140,18 @@ find ${LOCALDIR} -name ".tgz.enc" -type f -mmin +${LOCALAGEDAILIES} -exec sh -c 
 find ${LOCALDIR} -name ".tgz.enc" -type f -mtime +${LOCALAGEWEEKLIES} -exec sh -c 'test $(date +%d -r "$1") -le 7 -a $(date +%a -r "$1") = Mon || rm "$1"' -- {} \;
 
 #If file is older than 6 months delete it
-find ${LOCALDIR} -name "*.tgz.enc" -mmin +${LOCALAGEMONTHLIES} -exec rm {} \;
+find ${LOCALDIR} -name "*.tgz.enc" -type f -mmin +${LOCALAGEMONTHLIES} -exec rm {} \;
 
-#TODO: Granular deletion of remote backups
 log "Deleting old remote backups"
-ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "find ${REMOTEDIR} -name \"*tgz.enc\" -mmin +${REMOTEAGE} -exec rm {} \;"
+
+#If file is older than 1 week and not created on a monday then delete it
+ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "find ${REMOTEDIR} -name \"*tgz.enc\" -type f -mmin +${REMOTEAGEDAILIES} -exec sh -c 'test $(date +%a -r \"$1\") = Mon || rm \"$1\"' -- {} \;"
+
+#If the file is older than 28 days and not from first monday of month
+ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "find ${LOCALDIR} -name \".tgz.enc\" -type f -mtime +${LOCALAGEWEEKLIES} -exec sh -c 'test $(date +%d -r \"$1\") -le 7 -a $(date +%a -r \"$1\") = Mon || rm \"$1\"' -- {} \;"
+
+#If file is older than 6 months delete it
+ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "find ${LOCALDIR} -name \"*.tgz.enc\" -type f -mmin +${LOCALAGEMONTHLIES} -exec rm {} \;"
 
 ### END OF BACKUP DELETION ###
 
