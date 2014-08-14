@@ -133,6 +133,8 @@ log "rsync backups complete"
 
 log "Deleting old local backups"
 
+#Local backup deletion
+
 #If file is older than 1 week and not created on a monday then delete it
 find ${LOCALDIR} -name ".tgz.enc" -type f -mmin +${LOCALAGEDAILIES} -exec sh -c 'test $(date +%a -r $1) = Mon || rm "$1"' -- {} \;
 
@@ -144,14 +146,16 @@ find ${LOCALDIR} -name "*.tgz.enc" -type f -mmin +${LOCALAGEMONTHLIES} -exec rm 
 
 log "Deleting old remote backups"
 
+#Remote backup deletion
+
 #If file is older than 1 week and not created on a monday then delete it
 ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "find ${REMOTEDIR} -name \"*tgz.enc\" -type f -mmin +${REMOTEAGEDAILIES} -exec sh -c 'test $(date +%a -r \"$1\") = Mon || rm \"$1\"' -- {} \;"
 
 #If the file is older than 28 days and not from first monday of month
-ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "find ${LOCALDIR} -name \".tgz.enc\" -type f -mtime +${LOCALAGEWEEKLIES} -exec sh -c 'test $(date +%d -r \"$1\") -le 7 -a $(date +%a -r \"$1\") = Mon || rm \"$1\"' -- {} \;"
+ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "find ${REMOTEDIR} -name \".tgz.enc\" -type f -mtime +${REMOTEAGEWEEKLIES} -exec sh -c 'test $(date +%d -r \"$1\") -le 7 -a $(date +%a -r \"$1\") = Mon || rm \"$1\"' -- {} \;"
 
 #If file is older than 6 months delete it
-ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "find ${LOCALDIR} -name \"*.tgz.enc\" -type f -mmin +${LOCALAGEMONTHLIES} -exec rm {} \;"
+ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "find ${REMOTEDIR} -name \"*.tgz.enc\" -type f -mmin +${REMOTEAGEMONTHLIES} -exec rm {} \;"
 
 ### END OF BACKUP DELETION ###
 
