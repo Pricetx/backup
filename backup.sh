@@ -131,6 +131,18 @@ log "rsync backups complete"
 
 ### BACKUP DELETION ##
 
+if [[ $(uname) == 'FreeBSD' ]]; then
+
+        log "Deleting old local backups"
+        # Deletes backups older than 1 week
+        find ${LOCALDIR} -name "*.tgz.enc" -mmin +${LOCALAGE} -exec rm {} \;
+
+        log "Deleting old remote backups"
+        ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "find ${REMOTEDIR} -name \"*tgz.enc\" -mmin +${REMOTEAGE} -exec rm {} \;"
+
+elif [[ $(uname) == 'Linux' ]]; then
+
+
 log "Deleting old local backups"
 
 #Local backup deletion
@@ -156,6 +168,8 @@ ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "find ${REMOTEDIR} -name \".t
 
 #If file is older than 6 months delete it
 ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "find ${REMOTEDIR} -name \"*.tgz.enc\" -type f -mmin +${REMOTEAGEMONTHLIES} -exec rm {} \;"
+
+fi
 
 ### END OF BACKUP DELETION ###
 
