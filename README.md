@@ -8,6 +8,7 @@ A simple backup script utilising OpenSSL, tar and rsync, written in bash.
 * Backups are asymmetrically encrypted
 * The backup script can store a copy both locally and on a remote device/server
 * Backups are sent over SSH
+* Currently supports GNU/Linux and FreeBSD
 
 ##Backup retention 
 
