@@ -141,7 +141,8 @@ fi
 PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 
 #Directory the script is in (for later use)
-SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+SCRIPTNAME="${BASH_SOURCE[0]}"
+SCRIPTDIR="$( cd "$( dirname "${SCRIPTNAME}" )" && pwd )"
 
 
 log() {
@@ -241,7 +242,7 @@ if [ "$1" == "--remote" ]; then
     #Send the config and this script to the remote server to be run
     source "${SCRIPTDIR}"/backup.cfg
     echo "BACKUPHOSTNAME=$(hostname)" > /tmp/hostname
-    cat "${SCRIPTDIR}"/backup.cfg /tmp/hostname "${SCRIPTDIR}"/deleteoldbackups.sh | ssh -T -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER}
+    cat "${SCRIPTDIR}"/backup.cfg /tmp/hostname "${SCRIPTDIR}"/"${SCRIPTNAME}" | ssh -T -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER}
 
 elif [ $# == 0 ]; then
     #Check if config is already loaded
