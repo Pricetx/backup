@@ -238,7 +238,7 @@ elif [ $# == 0 ]; then
                 #We're running on the remote server - config already loaded
                 BACKUPDIR=${REMOTEDIR}
                 AGEDAILIES=${REMOTEAGEDAILIES}
-                AGEWEEKLIES=$REMOTEAGEWEEKLIES}
+                AGEWEEKLIES=${REMOTEAGEWEEKLIES}
                 AGEMONTHLIES=${REMOTEAGEMONTHLIES}
         else
                 #We're running locally - load the config
