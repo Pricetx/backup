@@ -11,7 +11,7 @@ log() {
 }
 
 # Load the backup settings
-source $(dirname $0)/backup.cfg
+source "$(dirname $0)"/backup.cfg
 
 ### CHECKS ###
 
@@ -176,6 +176,6 @@ fi
 
 ### END OF BACKUP DELETION ###
 
-ENDTIME=$(date +%s)
-DURATION=$((ENDTIME - STARTTIME))
+ENDTIME="$(date +%s)"
+DURATION="$((ENDTIME - STARTTIME))"
 log "All done. Backup and transfer completed in ${DURATION} seconds"
