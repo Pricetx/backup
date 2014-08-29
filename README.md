@@ -18,3 +18,11 @@ By default:
 * Monthly backups from the first Monday of each month are retained for the past six months
 
 The retention lengths are adjustable in backup.cfg
+<<<<<<< HEAD
+||||||| parent of 99a9b5b... Updated readme
+
+\* (currently GNU/Linux only)
+=======
+
+Automatic backup deletion requires deleteoldbackups.sh to be located in the same folder as backup.sh and backup.cfg
+>>>>>>> 99a9b5b... Updated readme
