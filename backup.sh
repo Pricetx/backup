@@ -11,7 +11,7 @@ log() {
 }
 
 # Load the backup settings
-source ./backup.cfg
+source $(dirname $0)/backup.cfg
 
 ### CHECKS ###
 
