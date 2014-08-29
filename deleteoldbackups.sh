@@ -235,9 +235,9 @@ deleteBackups() {
 
 if [ "$1" == "--remote" ]; then
     #Send the config and this script to the remote server to be run
-    source $(dirname "$0")/backup.cfg
+    source $(dirname $(realpath $0))/backup.cfg
     echo "BACKUPHOSTNAME=$(hostname)" > /tmp/hostname
-    cat $(dirname "$0")/backup.cfg /tmp/hostname $(dirname "$0")/$(basename "$0") | ssh -T -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER}
+    cat $(dirname $(realpath $0))/backup.cfg /tmp/hostname $(dirname $(realpath $0)) | ssh -T -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER}
 
 elif [ $# == 0 ]; then
     #Check if config is already loaded
@@ -249,7 +249,7 @@ elif [ $# == 0 ]; then
         AGEMONTHLIES=${REMOTEAGEMONTHLIES}
     else
         #We're running locally - load the config
-        source $(dirname "$0")/backup.cfg
+        source $(dirname $(realpath $0))/backup.cfg
         BACKUPDIR=${LOCALDIR}
         AGEDAILIES=${LOCALAGEDAILIES}
         AGEWEEKLIES=${LOCALAGEWEEKLIES}
