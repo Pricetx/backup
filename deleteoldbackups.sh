@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #!/bin/bash
 
 #Ensure that all possible binary paths are checked
@@ -132,3 +133,128 @@ else
     echo "Usage: $0 [--remote]"
     exit
 fi
+||||||| parent of d197a46... New script to delete old backups
+=======
+#!/bin/bash
+
+#Ensure that all possible binary paths are checked
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+
+
+
+getFileDate() {
+        unset FILEHOSTNAME FILEYEAR FILEMONTH FILEDAY FILETIME
+        FILEHOSTNAME=$(echo $1 | cut -d - -f 1)
+        FILEYEAR=$(echo $1 | cut -d - -f 2)
+        FILEMONTH=$(echo $1 | cut -d - -f 3)
+        FILEDAY=$(echo $1 | cut -d - -f 4)
+        FILETIME=$(echo $1 | cut -d - -f 5)
+
+        #Approximate a 30-day month and 365-day year
+    FILEDAYS=$[ $[10#${FILEYEAR}*365] + $[10#${FILEMONTH}*30] + $[10#${FILEDAY}] ]
+        FILEAGE=$[ 10#${DAYS} - 10#${FILEDAYS} ]
+
+        if [ "${BACKUPHOSTNAME}" == "${FILEHOSTNAME}" ]; then
+                if [[ "${FILEYEAR}" && "${FILEMONTH}" && "${FILEDAY}" && "${FILETIME}" ]]; then
+                        return 0
+                fi
+        fi
+
+        return 1 #File isn't a backup archive
+}
+
+
+deleteBackups() {
+        #Get current time
+        #Be careful when using time - GNU and BSD use different flags in many cases!
+        TIME=$(date +%H%M)
+        DAY=$(date +%d)
+        MONTH=$(date +%m)
+        YEAR=$(date +%C%y)
+
+        #Approximate a 30-day month and 365-day year
+    DAYS=$[ $[10#${YEAR}*365] + $[10#${MONTH}*30] + $[10#${DAY}] ]
+
+
+        cd ${BACKUPDIR}
+
+        #Iterate over all .tgz.enc files
+        for f in *.tgz.enc; do
+                getFileDate $f
+                KEEPFILE="NO"
+
+                if [ $? == 0 ]; then
+                        #It's a valid backup file and has the correct hostname
+
+                        #Delete all old monthlies
+                        if [[ ${FILEAGE} -gt ${AGEMONTHLIES} ]]; then
+                #Do nothing - leave $KEEPFILE as NO
+                                KEEPFILE="NO"
+
+            #Clean up old weeklies to monthlies (made on the 1st only)
+                        elif [[ ${FILEAGE} -gt ${AGEWEEKLIES} ]]; then
+                                if [ ${FILEDAY} == 1 ]; then
+                                        #Mark to be kept
+                                        KEEPFILE="YES"
+                                        echo WEEKLY
+                                fi
+
+                        #Clean up old dailies to weeklies (made on the 1st, 8th, 15th, 22nd, 29th)
+                        elif [[ ${FILEAGE} -gt ${AGEDAILIES} ]]; then
+                                for i in 1 8 15 22 29; do
+                                        if [ ${FILEDAY} == $i ]; then
+                                                #Mark to be kept
+                                                KEEPFILE="YES"
+                                                echo DAILY
+                                        fi
+                                done
+
+                        #File is too new, don't delete
+                        else
+                                KEEPFILE="YES"
+                        fi
+
+
+                        #Delete the file if it's still not marked to be kept
+                        if [ ${KEEPFILE} == "NO" ]; then
+                                #IMPLEMENT RM - ECHO FOR TESTING
+                                echo "DELETE $f"
+                        fi
+
+                fi
+        done
+}
+
+
+if [ "$1" == "--remote" ]; then
+        #Send the config and this script to the remote server to be run
+        source $(dirname $0)/backup.cfg
+        echo BACKUPHOSTNAME=$(hostname) > /tmp/hostname
+        cat $(dirname $0)/backup.cfg /tmp/hostname $(dirname $0)/$(basename $0) | ssh -T -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER}
+
+elif [ $# == 0 ]; then
+        #Check if config is already loaded
+        if [ "${BACKUPHOSTNAME}" ]; then
+                #We're running on the remote server - config already loaded
+                BACKUPDIR=${REMOTEDIR}
+                AGEDAILIES=${REMOTEAGEDAILIES}
+                AGEWEEKLIES=$REMOTEAGEWEEKLIES}
+                AGEMONTHLIES=${REMOTEAGEMONTHLIES}
+        else
+                #We're running locally - load the config
+                source $(dirname $0)/backup.cfg
+                BACKUPDIR=${LOCALDIR}
+                AGEDAILIES=${LOCALAGEDAILIES}
+        AGEWEEKLIES=${LOCALAGEWEEKLIES}
+        AGEMONTHLIES=${LOCALAGEMONTHLIES}
+                BACKUPHOSTNAME=${HOSTNAME}
+        fi
+
+        #Everything hereon is run irrespective of whether we're on the local or remote machine
+        deleteBackups
+else
+        #Script has been called with invalid flags
+        echo "Usage: $0 [--remote]"
+        exit
+fi
+>>>>>>> d197a46... New script to delete old backups
