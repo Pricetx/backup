@@ -50,7 +50,7 @@ if [ ! "$(ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} echo test)" ]; then
 fi
 
 # Check that remote directory exists and is writeable
-if [ $(ssh -p "${REMOTEPORT}" "${REMOTEUSER}"@"${REMOTESERVER}" touch "${REMOTEDIR}"/test) ]; then
+if [ "$(ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} touch ${REMOTEDIR}/test)" ]; then
         log "Failed to write to ${REMOTEDIR} on ${REMOTESERVER}"
         log "Check file permissions and that ${REMOTEDIR} is correct"
         exit
@@ -59,8 +59,8 @@ else
         ssh -p "${REMOTEPORT}" "${REMOTEUSER}"@"${REMOTESERVER}" rm "${REMOTEDIR}"/test
 fi
 
-BACKUPDATE=$(date -u +%Y-%m-%d-%H%M)
-STARTTIME=$(date +%s)
+BACKUPDATE="$(date -u +%Y-%m-%d-%H%M)"
+STARTTIME="$(date +%s)"
 TARFILE="${LOCALDIR}""$(hostname)"-"${BACKUPDATE}".tgz
 SQLFILE="${TEMPDIR}mysql_${BACKUPDATE}.sql"
 
@@ -70,9 +70,9 @@ cd "${LOCALDIR}"
 
 ### MYSQL BACKUP ###
 
-if [ ! $(command -v mysqldump) ]; then
+if [ ! "$(command -v mysqldump)" ]; then
         log "mysqldump not found, not backing up MySQL!"
-elif [ -z $ROOTMYSQL ]; then
+elif [ -z "$ROOTMYSQL" ]; then
         log "MySQL root password not set, not backing up MySQL!"
 else
         log "Starting MySQL dump dated ${BACKUPDATE}"
@@ -92,12 +92,12 @@ log "Starting tar backup dated ${BACKUPDATE}"
 TARCMD="-zcf ${TARFILE} ${BACKUP[*]}"
 
 # Add exclusions to front of command
-for i in ${EXCLUDE[@]}; do
+for i in "${EXCLUDE[@]}"; do
         TARCMD="--exclude $i ${TARCMD}"
 done
 
 # Run tar
-tar ${TARCMD}
+tar "${TARCMD}"
 
 # Encrypt tar file
 log "Encrypting backup"
@@ -114,10 +114,10 @@ log "Tranferring tar backup to remote server"
 scp -P "${REMOTEPORT}" "${TARFILE}".enc "${REMOTEUSER}"@"${REMOTESERVER}":"${REMOTEDIR}"
 log "File transfer completed"
 
-if [ ! $(command -v mysqldump) ]; then
-        if [ ! -z ${ROOTMYSQL} ]; then
+if [ ! "$(command -v mysqldump)" ]; then
+        if [ ! -z "${ROOTMYSQL}" ]; then
                 log "Deleting temporary MySQL backup"
-                rm ${SQLFILE}
+                rm "${SQLFILE}"
         fi
 fi
 
@@ -126,7 +126,7 @@ fi
 ### RSYNC BACKUP ###
 
 log "Starting rsync backups"
-for i in ${RSYNCDIR[@]}; do
+for i in "${RSYNCDIR[@]}"; do
         rsync -avz --no-links --progress --delete --relative -e"ssh -p ${REMOTEPORT}" $i ${REMOTEUSER}@${REMOTESERVER}:${REMOTEDIR}
 done
 log "rsync backups complete"
@@ -135,7 +135,7 @@ log "rsync backups complete"
 
 ### BACKUP DELETION ##
 
-if [[ $(uname) == 'FreeBSD' ]]; then
+if [[ "$(uname)" == 'FreeBSD' ]]; then
 
         log "Deleting old local backups"
         # Deletes backups older than 1 week
@@ -144,7 +144,7 @@ if [[ $(uname) == 'FreeBSD' ]]; then
         log "Deleting old remote backups"
         ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "find ${REMOTEDIR} -name \"*tgz.enc\" -mmin +${REMOTEAGEDAILIES} -exec rm {} \;"
 
-elif [[ $(uname) == 'Linux' ]]; then
+elif [[ "$(uname)" == 'Linux' ]]; then
 
         log "Deleting old local backups"
 
