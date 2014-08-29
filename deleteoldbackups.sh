@@ -140,6 +140,10 @@ fi
 #Ensure that all possible binary paths are checked
 PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 
+#Directory the script is in (for later use)
+SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+
 log() {
     echo "$1"
     echo "$(date -u +%Y-%m-%d-%H%M)" "$1" >> "deleted.log"
@@ -235,9 +239,9 @@ deleteBackups() {
 
 if [ "$1" == "--remote" ]; then
     #Send the config and this script to the remote server to be run
-    source $(dirname $(realpath $0))/backup.cfg
+    source "${SCRIPTDIR}"/backup.cfg
     echo "BACKUPHOSTNAME=$(hostname)" > /tmp/hostname
-    cat $(dirname $(realpath $0))/backup.cfg /tmp/hostname $(dirname $(realpath $0)) | ssh -T -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER}
+    cat "${SCRIPTDIR}"/backup.cfg /tmp/hostname "${SCRIPTDIR}"/deleteoldbackups.sh | ssh -T -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER}
 
 elif [ $# == 0 ]; then
     #Check if config is already loaded
