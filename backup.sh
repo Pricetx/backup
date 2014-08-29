@@ -178,4 +178,4 @@ fi
 
 ENDTIME=$(date +%s)
 DURATION=$((ENDTIME - STARTTIME))
-log "All done. Backup and transter completed in ${DURATION} seconds"
+log "All done. Backup and transfer completed in ${DURATION} seconds"
