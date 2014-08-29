@@ -140,6 +140,10 @@ fi
 #Ensure that all possible binary paths are checked
 PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 
+log() {
+        echo "$1"
+    echo "$(date -u +%Y-%m-%d-%H%M)" "$1" >> "deleted.log"
+}
 
 
 getFileDate() {
@@ -177,9 +181,10 @@ deleteBackups() {
 
 
         cd ${BACKUPDIR}
+        log "Checking for backups to delete"
 
         #Iterate over all .tgz.enc files
-        for f in *.tgz.enc; do
+        for f in *.tgz*; do
                 getFileDate $f
                 KEEPFILE="NO"
 
@@ -189,14 +194,14 @@ deleteBackups() {
                         #Delete all old monthlies
                         if [[ ${FILEAGE} -gt ${AGEMONTHLIES} ]]; then
                 #Do nothing - leave $KEEPFILE as NO
-                                KEEPFILE="NO"
+                                log "$f DELETED - was over ${AGEMONTHLIES} days old"
 
             #Clean up old weeklies to monthlies (made on the 1st only)
                         elif [[ ${FILEAGE} -gt ${AGEWEEKLIES} ]]; then
                                 if [ ${FILEDAY} == 1 ]; then
                                         #Mark to be kept
                                         KEEPFILE="YES"
-                                        echo WEEKLY
+                                        log "$f held back as monthly backup"
                                 fi
 
                         #Clean up old dailies to weeklies (made on the 1st, 8th, 15th, 22nd, 29th)
@@ -205,24 +210,27 @@ deleteBackups() {
                                         if [ ${FILEDAY} == $i ]; then
                                                 #Mark to be kept
                                                 KEEPFILE="YES"
-                                                echo DAILY
+                                                log "$f held back as weekly backup"
                                         fi
                                 done
 
                         #File is too new, don't delete
                         else
                                 KEEPFILE="YES"
+                                log "$f held back as daily backup"
                         fi
 
 
                         #Delete the file if it's still not marked to be kept
                         if [ ${KEEPFILE} == "NO" ]; then
-                                #IMPLEMENT RM - ECHO FOR TESTING
-                                echo "DELETE $f"
+                                #IMPLEMENT RM AFTER TESTING
+                                log "$f DELETED - pruned for granular backup"
                         fi
 
                 fi
         done
+
+        log "Finished deleting old backups"
 }
 
 
