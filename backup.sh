@@ -139,6 +139,7 @@ log "rsync backups complete"
 ### BACKUP DELETION ##
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 bash "${SCRIPTDIR}"/deleteoldbackups.sh
 bash "${SCRIPTDIR}"/deleteoldbackups.sh --remote
 ||||||| parent of 8d54ab2... Added granular backup for FreeBSD
@@ -245,6 +246,74 @@ elif [[ $REMOTEUNAME == 'Linux' ]]; then
         ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "find ${REMOTEDIR} -name \"*.tgz.enc\" -type f -mmin +${REMOTEAGEMONTHLIES} -exec rm {} \;"
 fi
 >>>>>>> 8d54ab2... Added granular backup for FreeBSD
+||||||| parent of 25a697e... Updated backup deletion to use new script
+if [[ $(uname) == 'FreeBSD' ]]; then
+        log "Deleting old local backups"
+
+        # Local backup deletion
+
+        # If file is older than 1 week and not created on a monday then delete it
+        find ${LOCALDIR} -name "*.tgz.enc" -type f -mmin +${LOCALAGEDAILIES} -exec sh -c 'test $(stat -f "%Sm" -t "%a" $1) = Mon || rm {}' \;
+
+        # If the file is older than 28 days and not from first monday of month
+        find ${LOCALDIR} -name "*.tgz.enc" -type f -mtime +${LOCALAGEWEEKLIES} -exec sh -c 'test $(stat -f "%Sm" -t "%d" "$1") -le 7 -a $(stat -f %Sm -t %a "$1") = Mon || rm {}' \;
+
+        # If file is older than 6 months delete it
+        find ${LOCALDIR} -name "*.tgz.enc" -type f -mmin +${LOCALAGEMONTHLIES} -exec rm {} \;
+
+elif [[ $(uname) == 'Linux' ]]; then
+
+        log "Deleting old local backups"
+
+        # Local backup deletion
+
+        # If file is older than 1 week and not created on a monday then delete it
+        find ${LOCALDIR} -name ".tgz.enc" -type f -mmin +${LOCALAGEDAILIES} -exec sh -c 'test $(date +%a -r $1) = Mon || rm "$1"' -- {} \;
+
+        # If the file is older than 28 days and not from first monday of month
+        find ${LOCALDIR} -name ".tgz.enc" -type f -mtime +${LOCALAGEWEEKLIES} -exec sh -c 'test $(date +%d -r "$1") -le 7 -a $(date +%a -r "$1") = Mon || rm "$1"' -- {} \;
+
+        # If file is older than 6 months delete it
+        find ${LOCALDIR} -name "*.tgz.enc" -type f -mmin +${LOCALAGEMONTHLIES} -exec rm {} \;
+fi
+
+
+REMOTEUNAME=$(ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "uname")
+
+if [[ $REMOTEUNAME == 'FreeBSD' ]]; then
+
+        log "Deleting old remote backups"
+
+        # Remote backup deletion
+
+        # If file is older than 1 week and not created on a monday then delete it
+        ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "find ${REMOTEDIR} -name \"*.tgz.enc\" -type f -mmin +${REMOTEAGEDAILIES} -exec sh -c 'test \$(stat -f %Sm -t %a \$1) = Mon || rm {}' \;"
+
+        # If the file is older than 28 days and not from first monday of month
+        ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "find ${REMOTEDIR} -name \"*.tgz.enc\" -type f -mtime +${REMOTEAGEWEEKLIES} -exec sh -c 'test \$(stat -f %Sm -t %d \$1) -le 7 -a \$(stat -f %Sm -t %a \$1) = Mon || rm {}' \;"
+
+        # If file is older than 6 months delete it
+        ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "find ${REMOTEDIR} -name \"*.tgz.enc\" -type f -mmin +${REMOTEAGEMONTHLIES} -exec rm {} \;"
+
+elif [[ $REMOTEUNAME == 'Linux' ]]; then
+
+        log "Deleting old remote backups"
+
+        # Remote backup deletion
+
+        # If file is older than 1 week and not created on a monday then delete it
+        ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "find ${REMOTEDIR} -name \"*tgz.enc\" -type f -mmin +${REMOTEAGEDAILIES} -exec sh -c 'test $(date +%a -r \"$1\") = Mon || rm \"$1\"' -- {} \;"
+
+        # If the file is older than 28 days and not from first monday of month
+        ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "find ${REMOTEDIR} -name \".tgz.enc\" -type f -mtime +${REMOTEAGEWEEKLIES} -exec sh -c 'test $(date +%d -r \"$1\") -le 7 -a $(date +%a -r \"$1\") = Mon || rm \"$1\"' -- {} \;"
+
+        # If file is older than 6 months delete it
+        ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "find ${REMOTEDIR} -name \"*.tgz.enc\" -type f -mmin +${REMOTEAGEMONTHLIES} -exec rm {} \;"
+fi
+=======
+bash $(dirname $0)/deleteoldbackups.sh
+bash $(dirname $0)/deleteoldbackups.sh --remote
+>>>>>>> 25a697e... Updated backup deletion to use new script
 
 ### END OF BACKUP DELETION ###
 
