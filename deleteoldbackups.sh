@@ -222,7 +222,7 @@ deleteBackups() {
 
             #Delete the file if it's still not marked to be kept
             if [ ${KEEPFILE} == "NO" ]; then
-                #IMPLEMENT RM AFTER TESTING
+                rm -f "$f"
                 log "$f DELETED - pruned for granular backup"
             fi
 
