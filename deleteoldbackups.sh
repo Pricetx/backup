@@ -206,7 +206,7 @@ deleteBackups() {
 
             #Clean up old dailies to weeklies (made on the 1st, 8th, 15th, 22nd, 29th)
             elif [[ ${FILEAGE} -gt ${AGEDAILIES} ]]; then
-                for i in 1 8 15 22 29; do
+                for i in 01 08 15 22 29; do
                     if [ ${FILEDAY} == $i ]; then 
                         #Mark to be kept
                         KEEPFILE="YES"
