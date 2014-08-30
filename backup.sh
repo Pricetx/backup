@@ -141,6 +141,7 @@ log "rsync backups complete"
 bash "${SCRIPTDIR}"/deleteoldbackups.sh
 bash "${SCRIPTDIR}"/deleteoldbackups.sh --remote
 
+
 ### END OF BACKUP DELETION ###
 
 ENDTIME=$(date +%s)

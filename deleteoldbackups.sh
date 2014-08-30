@@ -65,7 +65,7 @@ deleteBackups() {
 
             #Clean up old weeklies to monthlies (made on the 1st only)
             elif [[ ${FILEAGE} -gt ${AGEWEEKLIES} ]]; then
-                if [ "${FILEDAY}" == 1 ]; then
+                if [ "${FILEDAY}" == 01 ]; then
                     #Mark to be kept
                     KEEPFILE="YES"
                     log "$f held back as monthly backup"
