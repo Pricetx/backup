@@ -3,6 +3,9 @@
 # Ensure that all possible binary paths are checked
 PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 
+#Directory the script is in (for later use)
+SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 # Provides the 'log' command to simultaneously log to
 # STDOUT and the log file with a single command
 log() {
@@ -11,7 +14,7 @@ log() {
 }
 
 # Load the backup settings
-source "$(dirname $0)"/backup.cfg
+source "${SCRIPTDIR}"/backup.cfg
 
 ### CHECKS ###
 
@@ -50,7 +53,7 @@ if [ ! "$(ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} echo test)" ]; then
 fi
 
 # Check that remote directory exists and is writeable
-if [ "$(ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} touch ${REMOTEDIR}/test)" ]; then
+if [ $(ssh -p "${REMOTEPORT}" "${REMOTEUSER}"@"${REMOTESERVER}" touch "${REMOTEDIR}"/test) ]; then
         log "Failed to write to ${REMOTEDIR} on ${REMOTESERVER}"
         log "Check file permissions and that ${REMOTEDIR} is correct"
         exit
@@ -59,8 +62,8 @@ else
         ssh -p "${REMOTEPORT}" "${REMOTEUSER}"@"${REMOTESERVER}" rm "${REMOTEDIR}"/test
 fi
 
-BACKUPDATE="$(date -u +%Y-%m-%d-%H%M)"
-STARTTIME="$(date +%s)"
+BACKUPDATE=$(date -u +%Y-%m-%d-%H%M)
+STARTTIME=$(date +%s)
 TARFILE="${LOCALDIR}""$(hostname)"-"${BACKUPDATE}".tgz
 SQLFILE="${TEMPDIR}mysql_${BACKUPDATE}.sql"
 
@@ -70,9 +73,9 @@ cd "${LOCALDIR}"
 
 ### MYSQL BACKUP ###
 
-if [ ! "$(command -v mysqldump)" ]; then
+if [ ! $(command -v mysqldump) ]; then
         log "mysqldump not found, not backing up MySQL!"
-elif [ -z "$ROOTMYSQL" ]; then
+elif [ -z $ROOTMYSQL ]; then
         log "MySQL root password not set, not backing up MySQL!"
 else
         log "Starting MySQL dump dated ${BACKUPDATE}"
@@ -92,12 +95,12 @@ log "Starting tar backup dated ${BACKUPDATE}"
 TARCMD="-zcf ${TARFILE} ${BACKUP[*]}"
 
 # Add exclusions to front of command
-for i in "${EXCLUDE[@]}"; do
+for i in ${EXCLUDE[@]}; do
         TARCMD="--exclude $i ${TARCMD}"
 done
 
 # Run tar
-tar "${TARCMD}"
+tar ${TARCMD}
 
 # Encrypt tar file
 log "Encrypting backup"
@@ -114,10 +117,10 @@ log "Tranferring tar backup to remote server"
 scp -P "${REMOTEPORT}" "${TARFILE}".enc "${REMOTEUSER}"@"${REMOTESERVER}":"${REMOTEDIR}"
 log "File transfer completed"
 
-if [ ! "$(command -v mysqldump)" ]; then
-        if [ ! -z "${ROOTMYSQL}" ]; then
+if [ ! $(command -v mysqldump) ]; then
+        if [ ! -z ${ROOTMYSQL} ]; then
                 log "Deleting temporary MySQL backup"
-                rm "${SQLFILE}"
+                rm ${SQLFILE}
         fi
 fi
 
@@ -126,7 +129,7 @@ fi
 ### RSYNC BACKUP ###
 
 log "Starting rsync backups"
-for i in "${RSYNCDIR[@]}"; do
+for i in ${RSYNCDIR[@]}; do
         rsync -avz --no-links --progress --delete --relative -e"ssh -p ${REMOTEPORT}" $i ${REMOTEUSER}@${REMOTESERVER}:${REMOTEDIR}
 done
 log "rsync backups complete"
@@ -135,47 +138,11 @@ log "rsync backups complete"
 
 ### BACKUP DELETION ##
 
-if [[ "$(uname)" == 'FreeBSD' ]]; then
-
-        log "Deleting old local backups"
-        # Deletes backups older than 1 week
-        find ${LOCALDIR} -name "*.tgz.enc" -mmin +${LOCALAGEDAILIES} -exec rm {} \;
-
-        log "Deleting old remote backups"
-        ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "find ${REMOTEDIR} -name \"*tgz.enc\" -mmin +${REMOTEAGEDAILIES} -exec rm {} \;"
-
-elif [[ "$(uname)" == 'Linux' ]]; then
-
-        log "Deleting old local backups"
-
-        # Local backup deletion
-
-        # If file is older than 1 week and not created on a monday then delete it
-        find ${LOCALDIR} -name ".tgz.enc" -type f -mmin +${LOCALAGEDAILIES} -exec sh -c 'test $(date +%a -r $1) = Mon || rm "$1"' -- {} \;
-
-        # If the file is older than 28 days and not from first monday of month
-        find ${LOCALDIR} -name ".tgz.enc" -type f -mtime +${LOCALAGEWEEKLIES} -exec sh -c 'test $(date +%d -r "$1") -le 7 -a $(date +%a -r "$1") = Mon || rm "$1"' -- {} \;
-
-        # If file is older than 6 months delete it
-        find ${LOCALDIR} -name "*.tgz.enc" -type f -mmin +${LOCALAGEMONTHLIES} -exec rm {} \;
-
-        log "Deleting old remote backups"
-
-        # Remote backup deletion
-
-        # If file is older than 1 week and not created on a monday then delete it
-        ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "find ${REMOTEDIR} -name \"*tgz.enc\" -type f -mmin +${REMOTEAGEDAILIES} -exec sh -c 'test $(date +%a -r \"$1\") = Mon || rm \"$1\"' -- {} \;"
-
-        # If the file is older than 28 days and not from first monday of month
-        ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "find ${REMOTEDIR} -name \".tgz.enc\" -type f -mtime +${REMOTEAGEWEEKLIES} -exec sh -c 'test $(date +%d -r \"$1\") -le 7 -a $(date +%a -r \"$1\") = Mon || rm \"$1\"' -- {} \;"
-
-        # If file is older than 6 months delete it
-        ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "find ${REMOTEDIR} -name \"*.tgz.enc\" -type f -mmin +${REMOTEAGEMONTHLIES} -exec rm {} \;"
-
-fi
+bash "${SCRIPTDIR}"/deleteoldbackups.sh
+bash "${SCRIPTDIR}"/deleteoldbackups.sh --remote
 
 ### END OF BACKUP DELETION ###
 
-ENDTIME="$(date +%s)"
-DURATION="$((ENDTIME - STARTTIME))"
+ENDTIME=$(date +%s)
+DURATION=$((ENDTIME - STARTTIME))
 log "All done. Backup and transfer completed in ${DURATION} seconds"
