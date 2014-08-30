@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #Ensure that all possible binary paths are checked
 PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
@@ -105,7 +105,7 @@ if [ "$1" == "--remote" ]; then
     #Send the config and this script to the remote server to be run
     source "${SCRIPTDIR}"/backup.cfg
     echo "BACKUPHOSTNAME=$(hostname)" > /tmp/hostname
-    cat "${SCRIPTDIR}"/backup.cfg /tmp/hostname "${SCRIPTDIR}"/"${SCRIPTNAME}" | ssh -T -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER}
+    cat "${SCRIPTDIR}"/backup.cfg /tmp/hostname "${SCRIPTDIR}"/"${SCRIPTNAME}" | ssh -T -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "/usr/bin/env bash"
 
 elif [ $# == 0 ]; then
     #Check if config is already loaded
