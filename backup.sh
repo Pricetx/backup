@@ -19,7 +19,7 @@ source "${SCRIPTDIR}"/backup.cfg
 ### CHECKS ###
 
 # This section checks for all of the binaries used in the backup
-BINARIES=( date find openssl rm rsync scp ssh tar )
+BINARIES=( cat cd command date dirname echo find openssl pwd realpath rm rsync scp ssh tar )
 
 # Iterate over the list of binaries, and if one isn't found, abort
 for BINARY in "${BINARIES[@]}"; do
