@@ -105,7 +105,8 @@ if [ "$1" == "--remote" ]; then
     source "${SCRIPTDIR}"/backup.cfg
     echo "BACKUPHOSTNAME=$(hostname)" > /tmp/hostname
     cat "${SCRIPTDIR}"/backup.cfg /tmp/hostname "${SCRIPTDIR}"/deleteoldbackups.sh | ssh -T -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "/usr/bin/env bash"
-
+    rm /tmp/hostname
+	
 elif [ $# == 0 ]; then
     #Check if config is already loaded
     if [ "${BACKUPHOSTNAME}" ]; then
