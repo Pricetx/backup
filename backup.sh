@@ -117,7 +117,7 @@ log "Tranferring tar backup to remote server"
 scp -P "${REMOTEPORT}" "${TARFILE}".enc "${REMOTEUSER}"@"${REMOTESERVER}":"${REMOTEDIR}"
 log "File transfer completed"
 
-if [ ! $(command -v mysqldump) ]; then
+if [ $(command -v mysqldump) ]; then
         if [ ! -z ${ROOTMYSQL} ]; then
                 log "Deleting temporary MySQL backup"
                 rm ${SQLFILE}
