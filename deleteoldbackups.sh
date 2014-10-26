@@ -49,8 +49,8 @@ deleteBackups() {
     cd "${BACKUPDIR}"
     log "Checking for backups to delete"
 
-    #Iterate over all .tgz.enc files
-    for f in *.tgz*; do
+    #Iterate over all .enc files
+    for f in *.enc; do
         getFileDate "$f"
         KEEPFILE="NO"
 
