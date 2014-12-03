@@ -14,7 +14,7 @@ log() {
 
 
 getFileDate() {
-    unset FILEHOSTNAME FILEYEAR FILEMONTH FILEDAY FILETIME
+    unset FILEHOSTNAME FILEYEAR FILEMONTH FILEDAY FILETIME FILEDAYS FILEAGE
     FILEHOSTNAME=$(echo "$1" | cut -d - -f 1)
     FILEYEAR=$(echo "$1" | cut -d - -f 2)
     FILEMONTH=$(echo "$1" | cut -d - -f 3)
