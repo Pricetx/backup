@@ -51,8 +51,8 @@ deleteBackups() {
 
     #Iterate over all .enc files
     for f in *.enc; do
-        getFileDate "$f"
         KEEPFILE="NO"
+        getFileDate "$f"
 
         if [ $? == 0 ]; then
             #It's a valid backup file and has the correct hostname
