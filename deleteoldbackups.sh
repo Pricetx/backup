@@ -14,19 +14,18 @@ log() {
 
 
 getFileDate() {
-    unset FILEHOSTNAME FILEYEAR FILEMONTH FILEDAY FILETIME
+    unset FILEHOSTNAME FILEYEAR FILEMONTH FILEDAY FILETIME FILEDAYS FILEAGE
     FILEHOSTNAME=$(echo "$1" | cut -d - -f 1)
     FILEYEAR=$(echo "$1" | cut -d - -f 2)
     FILEMONTH=$(echo "$1" | cut -d - -f 3)
     FILEDAY=$(echo "$1" | cut -d - -f 4)
     FILETIME=$(echo "$1" | cut -d - -f 5)
 
-    #Approximate a 30-day month and 365-day year
-    FILEDAYS=$(( $((10#${FILEYEAR}*365)) + $((10#${FILEMONTH}*30)) + $((10#${FILEDAY})) ))
-    FILEAGE=$(( 10#${DAYS} - 10#${FILEDAYS} ))
-
     if [ "${BACKUPHOSTNAME}" == "${FILEHOSTNAME}" ]; then
         if [[ "${FILEYEAR}" && "${FILEMONTH}" && "${FILEDAY}" && "${FILETIME}" ]]; then
+		    #Approximate a 30-day month and 365-day year
+            FILEDAYS=$(( $((10#${FILEYEAR}*365)) + $((10#${FILEMONTH}*30)) + $((10#${FILEDAY})) ))
+            FILEAGE=$(( 10#${DAYS} - 10#${FILEDAYS} ))
             return 0
         fi
     fi
@@ -51,8 +50,8 @@ deleteBackups() {
 
     #Iterate over all .enc files
     for f in *.enc; do
-        getFileDate "$f"
         KEEPFILE="NO"
+        getFileDate "$f"
 
         if [ $? == 0 ]; then
             #It's a valid backup file and has the correct hostname
