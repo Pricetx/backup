@@ -30,7 +30,6 @@ for BINARY in "${BINARIES[@]}"; do
 done
 
 # Check if the backup folders exist and are writeable
-# also, check if the OpenSSL X509 certificate exists
 if [ ! -w "${LOCALDIR}" ]; then
         log "${LOCALDIR} either doesn't exist or isn't writable"
         log "Either fix or replace the LOCALDIR setting"
@@ -38,10 +37,6 @@ if [ ! -w "${LOCALDIR}" ]; then
 elif [ ! -w "${TEMPDIR}" ]; then
         log "${TEMPDIR} either doesn't exist or isn't writable"
         log "Either fix or replace the TEMPDIR setting"
-        exit
-elif [ ! -r "${CRTFILE}" ]; then
-        log "${CRTFILE} either doesn't exist or isn't readable"
-        log "Either fix or replace the CRTFILE setting"
         exit
 fi
 
@@ -104,7 +99,8 @@ tar ${TARCMD}
 
 # Encrypt tar file
 log "Encrypting backup"
-openssl smime -encrypt -aes256 -binary -in ${TARFILE} -out ${TARFILE}.enc -outform DER -stream ${CRTFILE}
+
+openssl enc -aes256 -in ${TARFILE} -out ${TARFILE}.enc -pass pass:${BACKUPPASS} -md sha1
 log "Encryption completed"
 
 BACKUPSIZE=$(du -h "${TARFILE}" | cut -f1)

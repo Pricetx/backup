@@ -5,7 +5,7 @@ A simple backup script utilising OpenSSL, tar and rsync, written in bash.
 ##Script Features
 
 * Incremental backup retention
-* Backups are asymmetrically encrypted
+* Backups are encrypted with AES256-cbc with SHA1 message-digest
 * The backup script can store a copy both locally and on a remote device/server
 * Backups are sent over SSH
 * Currently supports GNU/Linux and FreeBSD
