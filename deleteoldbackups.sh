@@ -8,8 +8,10 @@ SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 
 log() {
-    echo "$1"
-    echo "$(date -u +%Y-%m-%d-%H%M)" "$1" >> "deleted.log"
+    echo -e "$(date -u +%Y-%m-%d-%H%M)" "$1" >> "deleted.log"
+    if [ "$2" != "noecho" ]; then
+        echo -e "$1"
+    fi
 }
 
 
@@ -33,6 +35,10 @@ getFileDate() {
     return 1 #File isn't a backup archive
 }
 
+# Converts bytes to a human readable format
+humanReadable() {
+    HUMAN=$(echo "$1" | awk '{ split( "B KiB MiB GiB TiB PiB EiB ZiB YiB", s ); n=1; while( $1>1024 ){ $1/=1024; n++ } printf "%.2f %s", $1, s[n] }')
+}
 
 deleteBackups() {
     #Get current time
@@ -44,9 +50,13 @@ deleteBackups() {
     #Approximate a 30-day month and 365-day year
     DAYS=$(( $((10#${YEAR}*365)) + $((10#${MONTH}*30)) + $((10#${DAY})) ))
 
+    # Count how many backups have been deleted/kept, and how much space has been saved/used
+    NDELETED=0
+    NKEPT=0
+    SPACEFREED=0
+    SPACEUSED=0
 
-    cd "${BACKUPDIR}"
-    log "Checking for backups to delete"
+    cd "${BACKUPDIR}" || exit
 
     #Iterate over all .enc files
     for f in *.enc; do
@@ -58,15 +68,24 @@ deleteBackups() {
 
             #Delete all old monthlies
             if [[ ${FILEAGE} -gt ${AGEMONTHLIES} ]]; then
-                #Do nothing - leave $KEEPFILE as NO
-                log "$f DELETED - was over ${AGEMONTHLIES} days old"
+                #Delete it - leave $KEEPFILE as NO
+                log "$f DELETED - was over ${AGEMONTHLIES} days old" "noecho"
+
+                NDELETED=$(( 10#${NDELETED} + 1 ))
+                #Slightly dirty way of getting filesize, but it's the most portable (wc is slow)
+                LS=($(ls -l "$f"))
+                SPACEFREED=$(( 10#${SPACEFREED} + 10#${LS[4]} ))
 
             #Clean up old weeklies to monthlies (made on the 1st only)
             elif [[ ${FILEAGE} -gt ${AGEWEEKLIES} ]]; then
                 if [ "${FILEDAY}" == 01 ]; then
                     #Mark to be kept
                     KEEPFILE="YES"
-                    log "$f held back as monthly backup"
+                    log "$f held back as monthly backup" "noecho"
+
+                    NKEPT=$(( 10#${NKEPT} + 1 ))
+                    LS=($(ls -l "$f"))
+                    SPACEUSED=$(( 10#${SPACEUSED} + 10#${LS[4]} ))
                 fi
 
             #Clean up old dailies to weeklies (made on the 1st, 8th, 15th, 22nd, 29th)
@@ -75,19 +94,27 @@ deleteBackups() {
                     if [ "${FILEDAY}" == $i ]; then 
                         #Mark to be kept
                         KEEPFILE="YES"
-                        log "$f held back as weekly backup"
+                        log "$f held back as weekly backup" "noecho"
+
+                        NKEPT=$(( 10#${NKEPT} + 1 ))
+                        LS=($(ls -l "$f"))
+                        SPACEUSED=$(( 10#${SPACEUSED} + 10#${LS[4]} ))
                     fi
                 done
 
             #File is too new, don't delete
             else
                 KEEPFILE="YES"
-                log "$f held back as daily backup"
+                log "$f held back as daily backup" "noecho"
+
+                NKEPT=$(( 10#${NKEPT} + 1 ))
+                LS=($(ls -l "$f"))
+                SPACEUSED=$(( 10#${SPACEUSED} + 10#${LS[4]} ))
             fi
 
 
-            #Delete the file if it's still not marked to be kept
             if [ ${KEEPFILE} == "NO" ]; then
+                # Actually delete them
                 rm -f "$f"
                 log "$f DELETED - pruned for granular backup"
             fi
@@ -95,7 +122,9 @@ deleteBackups() {
         fi
     done
 
-    log "Finished deleting old backups"
+    # Output stats
+    humanReadable ${SPACEFREED}; log "Deleted ${NDELETED} backups, freeing ${HUMAN}"
+    humanReadable ${SPACEUSED}; log "${NKEPT} backups remain, taking up ${HUMAN}"
 }
 
 
@@ -103,9 +132,9 @@ if [ "$1" == "--remote" ]; then
     #Send the config and this script to the remote server to be run
     source "${SCRIPTDIR}"/backup.cfg
     echo "BACKUPHOSTNAME=$(hostname)" > /tmp/hostname
-    cat "${SCRIPTDIR}"/backup.cfg /tmp/hostname "${SCRIPTDIR}"/deleteoldbackups.sh | ssh -T -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "/usr/bin/env bash"
+    cat "${SCRIPTDIR}"/backup.cfg /tmp/hostname "${SCRIPTDIR}"/deleteoldbackups.sh | ssh -T -p "${REMOTEPORT}" "${REMOTEUSER}"@"${REMOTESERVER}" "/usr/bin/env bash"
     rm /tmp/hostname
-	
+
 elif [ $# == 0 ]; then
     #Check if config is already loaded
     if [ "${BACKUPHOSTNAME}" ]; then
@@ -116,7 +145,7 @@ elif [ $# == 0 ]; then
         AGEMONTHLIES=${REMOTEAGEMONTHLIES}
     else
         #We're running locally - load the config
-        source $(dirname $(realpath $0))/backup.cfg
+        source "$(dirname "$(realpath "$0")")"/backup.cfg
         BACKUPDIR=${LOCALDIR}
         AGEDAILIES=${LOCALAGEDAILIES}
         AGEWEEKLIES=${LOCALAGEWEEKLIES}
