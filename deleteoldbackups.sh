@@ -8,8 +8,10 @@ SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 
 log() {
-    echo "$1"
     echo "$(date -u +%Y-%m-%d-%H%M)" "$1" >> "deleted.log"
+    if [ "$2" != "noecho" ]; then
+        echo "$1"
+    fi
 }
 
 
@@ -55,7 +57,7 @@ deleteBackups() {
     SPACEUSED=0
 
     cd "${BACKUPDIR}" || exit
-    log "Checking for backups to delete"
+    log "Checking for backups to delete..."
 
     #Iterate over all .enc files
     for f in *.enc; do
@@ -68,7 +70,7 @@ deleteBackups() {
             #Delete all old monthlies
             if [[ ${FILEAGE} -gt ${AGEMONTHLIES} ]]; then
                 #Delete it - leave $KEEPFILE as NO
-                log "$f DELETED - was over ${AGEMONTHLIES} days old"
+                log "$f DELETED - was over ${AGEMONTHLIES} days old" "noecho"
 
                 NDELETED=$(( 10#${NDELETED} + 1 ))
                 #Slightly dirty way of getting filesize, but it's the most portable (wc is slow)
@@ -80,7 +82,7 @@ deleteBackups() {
                 if [ "${FILEDAY}" == 01 ]; then
                     #Mark to be kept
                     KEEPFILE="YES"
-                    log "$f held back as monthly backup"
+                    log "$f held back as monthly backup" "noecho"
 
                     NKEPT=$(( 10#${NKEPT} + 1 ))
                     LS=($(ls -l "$f"))
@@ -93,7 +95,7 @@ deleteBackups() {
                     if [ "${FILEDAY}" == $i ]; then 
                         #Mark to be kept
                         KEEPFILE="YES"
-                        log "$f held back as weekly backup"
+                        log "$f held back as weekly backup" "noecho"
 
                         NKEPT=$(( 10#${NKEPT} + 1 ))
                         LS=($(ls -l "$f"))
@@ -104,7 +106,7 @@ deleteBackups() {
             #File is too new, don't delete
             else
                 KEEPFILE="YES"
-                log "$f held back as daily backup"
+                log "$f held back as daily backup" "noecho"
 
                 NKEPT=$(( 10#${NKEPT} + 1 ))
                 LS=($(ls -l "$f"))
@@ -122,10 +124,8 @@ deleteBackups() {
     done
 
     # Output stats
-    humanReadable ${SPACEFREED}; echo "Deleted ${NDELETED} backups, freeing ${HUMAN}"
-    humanReadable ${SPACEUSED}; echo "${NKEPT} backups remain, taking up ${HUMAN}"
-
-    log "Finished deleting old backups"
+    humanReadable ${SPACEFREED}; log "Deleted ${NDELETED} backups, freeing ${HUMAN}"
+    humanReadable ${SPACEUSED}; log "${NKEPT} backups remain, taking up ${HUMAN}"
 }
 
 
