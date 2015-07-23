@@ -133,7 +133,10 @@ log "rsync backups complete"
 
 ### BACKUP DELETION ##
 
+log "Checking for LOCAL backups to delete..."
 bash "${SCRIPTDIR}"/deleteoldbackups.sh
+
+log "Checking for REMOTE backups to delete..."
 bash "${SCRIPTDIR}"/deleteoldbackups.sh --remote
 
 

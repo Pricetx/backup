@@ -57,7 +57,6 @@ deleteBackups() {
     SPACEUSED=0
 
     cd "${BACKUPDIR}" || exit
-    log "Checking for backups to delete..."
 
     #Iterate over all .enc files
     for f in *.enc; do
