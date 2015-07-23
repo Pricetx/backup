@@ -8,6 +8,7 @@ SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Provides the 'log' command to simultaneously log to
 # STDOUT and the log file with a single command
+# NOTE: Use "" rather than \n unless you want a COMPLETELY blank line (no timestamp)
 log() {
     echo -e "$(date -u +%Y-%m-%d-%H%M)" "$1" >> "${LOGFILE}"
     if [ "$2" != "noecho" ]; then
@@ -74,7 +75,7 @@ elif [ -z "$ROOTMYSQL" ]; then
 else
         log "Starting MySQL dump dated ${BACKUPDATE}"
         mysqldump -u root -p"${ROOTMYSQL}" --all-databases > "${SQLFILE}"
-        log "MySQL dump complete\n"
+        log "MySQL dump complete"; log ""
 
         #Add MySQL backup to BACKUP list
         BACKUP=(${BACKUP[*]} ${SQLFILE})
@@ -105,16 +106,16 @@ log "Encryption completed"
 rm "${TARFILE}"
 
 BACKUPSIZE=$(du -h "${TARFILE}".enc | cut -f1)
-log "Tar backup complete. Filesize: ${BACKUPSIZE}\n"
+log "Tar backup complete. Filesize: ${BACKUPSIZE}"; log ""
 
 # Transfer to remote server
 log "Tranferring tar backup to remote server"
 scp -P "${REMOTEPORT}" "${TARFILE}".enc "${REMOTEUSER}"@"${REMOTESERVER}":"${REMOTEDIR}"
-log "File transfer completed\n"
+log "File transfer completed"; log ""
 
 if [ "$(command -v mysqldump)" ]; then
     if [ ! -z "${ROOTMYSQL}" ]; then
-        log "Deleting temporary MySQL backup\n"
+        log "Deleting temporary MySQL backup"; log ""
         rm "${SQLFILE}"
     fi
 fi
@@ -127,7 +128,7 @@ log "Starting rsync backups"
 for i in "${RSYNCDIR[@]}"; do
     rsync -aqz --no-links --progress --delete --relative -e"ssh -p ${REMOTEPORT}" "$i" "${REMOTEUSER}"@"${REMOTESERVER}":"${REMOTEDIR}"
 done
-log "rsync backups complete\n"
+log "rsync backups complete"; log ""
 
 ### END OF RSYNC BACKUP ###
 
@@ -135,12 +136,14 @@ log "rsync backups complete\n"
 
 log "Checking for LOCAL backups to delete..."
 bash "${SCRIPTDIR}"/deleteoldbackups.sh
+log ""
 
-log "\nChecking for REMOTE backups to delete..."
+log "Checking for REMOTE backups to delete..."
 bash "${SCRIPTDIR}"/deleteoldbackups.sh --remote
+log ""
 
 ### END OF BACKUP DELETION ###
 
 ENDTIME=$(date +%s)
 DURATION=$((ENDTIME - STARTTIME))
-log "\nAll done. Backup and transfer completed in ${DURATION} seconds"
+log "All done. Backup and transfer completed in ${DURATION} seconds\n"
