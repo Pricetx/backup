@@ -33,6 +33,10 @@ getFileDate() {
     return 1 #File isn't a backup archive
 }
 
+# Converts bytes to a human readable format
+humanReadable() {
+    HUMAN=$(echo $1 | awk '{ split( "B KiB MiB GiB TiB PiB EiB ZiB YiB", s ); n=1; while( $1>1024 ){ $1/=1024; n++ } printf "%.2f %s", $1, s[n] }')
+}
 
 deleteBackups() {
     #Get current time
@@ -44,7 +48,12 @@ deleteBackups() {
     #Approximate a 30-day month and 365-day year
     DAYS=$(( $((10#${YEAR}*365)) + $((10#${MONTH}*30)) + $((10#${DAY})) ))
 
-
+    # Count how many backups have been deleted/kept, and how much space has been saved/used
+    NDELETED=0
+    NKEPT=0
+    SPACEFREED=0
+    SPACEUSED=0
+    
     cd "${BACKUPDIR}"
     log "Checking for backups to delete"
 
@@ -58,8 +67,13 @@ deleteBackups() {
 
             #Delete all old monthlies
             if [[ ${FILEAGE} -gt ${AGEMONTHLIES} ]]; then
-                #Do nothing - leave $KEEPFILE as NO
+                #Delete it - leave $KEEPFILE as NO
                 log "$f DELETED - was over ${AGEMONTHLIES} days old"
+                
+                NDELETED=$(( 10#${NDELETED} + 1 ))
+                #Slightly dirty way of getting filesize, but it's the most portable (wc is slow)
+                LS=$(ls -l $f)
+                SPACEFREED=$(( 10#${SPACEFREED} + ${LS[4]} ))
 
             #Clean up old weeklies to monthlies (made on the 1st only)
             elif [[ ${FILEAGE} -gt ${AGEWEEKLIES} ]]; then
@@ -67,6 +81,10 @@ deleteBackups() {
                     #Mark to be kept
                     KEEPFILE="YES"
                     log "$f held back as monthly backup"
+                    
+                    NKEPT=$(( 10#${NKEPT} + 1 ))
+                    LS=$(ls -l $f)
+                    SPACEUSED=$(( 10#${SPACEUSED} + ${LS[4]} ))
                 fi
 
             #Clean up old dailies to weeklies (made on the 1st, 8th, 15th, 22nd, 29th)
@@ -76,6 +94,10 @@ deleteBackups() {
                         #Mark to be kept
                         KEEPFILE="YES"
                         log "$f held back as weekly backup"
+                        
+                        NKEPT=$(( 10#${NKEPT} + 1 ))
+                        LS=$(ls -l $f)
+                        SPACEUSED=$(( 10#${SPACEUSED} + ${LS[4]} ))
                     fi
                 done
 
@@ -83,17 +105,25 @@ deleteBackups() {
             else
                 KEEPFILE="YES"
                 log "$f held back as daily backup"
+                
+                NKEPT=$(( 10#${NKEPT} + 1 ))
+                LS=$(ls -l $f)
+                SPACEUSED=$(( 10#${SPACEUSED} + ${LS[4]} ))
             fi
 
 
-            #Delete the file if it's still not marked to be kept
             if [ ${KEEPFILE} == "NO" ]; then
+                # Actually delete them
                 rm -f "$f"
                 log "$f DELETED - pruned for granular backup"
             fi
 
         fi
     done
+    
+    # Output stats
+    humanReadable ${SPACEFREED}; echo "Deleted ${NDELETED} backups, freeing ${HUMAN}"
+    humanReadable ${SPACEUSED}; echo "${NKEPT} backups remain, taking up ${HUMAN}"
 
     log "Finished deleting old backups"
 }
