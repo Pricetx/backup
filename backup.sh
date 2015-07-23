@@ -69,16 +69,16 @@ cd "${LOCALDIR}" || exit
 ### MYSQL BACKUP ###
 
 if [ ! "$(command -v mysqldump)" ]; then
-        log "mysqldump not found, not backing up MySQL!"
+    log "mysqldump not found, not backing up MySQL!"
 elif [ -z "$ROOTMYSQL" ]; then
-        log "MySQL root password not set, not backing up MySQL!"
+    log "MySQL root password not set, not backing up MySQL!"
 else
-        log "Starting MySQL dump dated ${BACKUPDATE}"
-        mysqldump -u root -p"${ROOTMYSQL}" --all-databases > "${SQLFILE}"
-        log "MySQL dump complete"; log ""
+    log "Starting MySQL dump dated ${BACKUPDATE}"
+    mysqldump -u root -p"${ROOTMYSQL}" --all-databases > "${SQLFILE}"
+    log "MySQL dump complete"; log ""
 
-        #Add MySQL backup to BACKUP list
-        BACKUP=(${BACKUP[*]} ${SQLFILE})
+    #Add MySQL backup to BACKUP list
+    BACKUP=(${BACKUP[*]} ${SQLFILE})
 fi
 
 ### END OF MYSQL BACKUP ###
@@ -91,7 +91,7 @@ TARCMD="-zcf ${TARFILE} ${BACKUP[*]}"
 
 # Add exclusions to front of command
 for i in "${EXCLUDE[@]}"; do
-        TARCMD="--exclude $i ${TARCMD}"
+     TARCMD="--exclude $i ${TARCMD}"
 done
 
 # Run tar
