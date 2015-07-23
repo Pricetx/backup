@@ -9,9 +9,9 @@ SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Provides the 'log' command to simultaneously log to
 # STDOUT and the log file with a single command
 log() {
-    echo "$(date -u +%Y-%m-%d-%H%M)" "$1" >> "${LOGFILE}"
+    echo -e "$(date -u +%Y-%m-%d-%H%M)" "$1" >> "${LOGFILE}"
     if [ "$2" != "noecho" ]; then
-        echo "$1"
+        echo -e "$1"
     fi
 }
 
@@ -74,7 +74,7 @@ elif [ -z "$ROOTMYSQL" ]; then
 else
         log "Starting MySQL dump dated ${BACKUPDATE}"
         mysqldump -u root -p"${ROOTMYSQL}" --all-databases > "${SQLFILE}"
-        log "MySQL dump complete"
+        log "MySQL dump complete\n"
 
         #Add MySQL backup to BACKUP list
         BACKUP=(${BACKUP[*]} ${SQLFILE})
@@ -105,16 +105,16 @@ log "Encryption completed"
 rm "${TARFILE}"
 
 BACKUPSIZE=$(du -h "${TARFILE}".enc | cut -f1)
-log "Tar backup complete. Filesize: ${BACKUPSIZE}"
+log "Tar backup complete. Filesize: ${BACKUPSIZE}\n"
 
 # Transfer to remote server
 log "Tranferring tar backup to remote server"
 scp -P "${REMOTEPORT}" "${TARFILE}".enc "${REMOTEUSER}"@"${REMOTESERVER}":"${REMOTEDIR}"
-log "File transfer completed"
+log "File transfer completed\n"
 
 if [ "$(command -v mysqldump)" ]; then
     if [ ! -z "${ROOTMYSQL}" ]; then
-        log "Deleting temporary MySQL backup"
+        log "Deleting temporary MySQL backup\n"
         rm "${SQLFILE}"
     fi
 fi
@@ -127,7 +127,7 @@ log "Starting rsync backups"
 for i in "${RSYNCDIR[@]}"; do
     rsync -aqz --no-links --progress --delete --relative -e"ssh -p ${REMOTEPORT}" "$i" "${REMOTEUSER}"@"${REMOTESERVER}":"${REMOTEDIR}"
 done
-log "rsync backups complete"
+log "rsync backups complete\n"
 
 ### END OF RSYNC BACKUP ###
 
@@ -136,11 +136,11 @@ log "rsync backups complete"
 log "Checking for LOCAL backups to delete..."
 bash "${SCRIPTDIR}"/deleteoldbackups.sh
 
-log "Checking for REMOTE backups to delete..."
+log "\nChecking for REMOTE backups to delete..."
 bash "${SCRIPTDIR}"/deleteoldbackups.sh --remote
 
 ### END OF BACKUP DELETION ###
 
 ENDTIME=$(date +%s)
 DURATION=$((ENDTIME - STARTTIME))
-log "All done. Backup and transfer completed in ${DURATION} seconds"
+log "\nAll done. Backup and transfer completed in ${DURATION} seconds"
