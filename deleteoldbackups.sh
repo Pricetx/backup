@@ -8,9 +8,9 @@ SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 
 log() {
-    echo "$(date -u +%Y-%m-%d-%H%M)" "$1" >> "deleted.log"
+    echo -e "$(date -u +%Y-%m-%d-%H%M)" "$1" >> "deleted.log"
     if [ "$2" != "noecho" ]; then
-        echo "$1"
+        echo -e "$1"
     fi
 }
 
