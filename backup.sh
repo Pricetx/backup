@@ -41,20 +41,17 @@ elif [ ! -w "${TEMPDIR}" ]; then
 fi
 
 # Check that SSH login to remote server is successful
-if [ ! "$(ssh -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} echo test)" ]; then
+if [ ! "$(ssh -oBatchMode=yes -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} echo test)" ]; then
         log "Failed to login to ${REMOTEUSER}@${REMOTESERVER}"
         log "Make sure that your public key is in their authorized_keys"
         exit
 fi
 
 # Check that remote directory exists and is writeable
-if [ $(ssh -p "${REMOTEPORT}" "${REMOTEUSER}"@"${REMOTESERVER}" touch "${REMOTEDIR}"/test) ]; then
+if ! ssh -p "${REMOTEPORT}" "${REMOTEUSER}"@"${REMOTESERVER}" test -w "${REMOTEDIR}" ; then
         log "Failed to write to ${REMOTEDIR} on ${REMOTESERVER}"
         log "Check file permissions and that ${REMOTEDIR} is correct"
         exit
-else
-        # Remove the temporary file
-        ssh -p "${REMOTEPORT}" "${REMOTEUSER}"@"${REMOTESERVER}" rm "${REMOTEDIR}"/test
 fi
 
 BACKUPDATE=$(date -u +%Y-%m-%d-%H%M)
