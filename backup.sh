@@ -25,7 +25,7 @@ BINARIES=( cat cd command date dirname echo find openssl pwd realpath rm rsync s
 
 # Iterate over the list of binaries, and if one isn't found, abort
 for BINARY in "${BINARIES[@]}"; do
-        if [ ! "$(command -v $BINARY)" ]; then
+        if [ ! "$(command -v "$BINARY")" ]; then
                 log "$BINARY is not installed. Install it and try again"
                 exit
         fi
@@ -43,7 +43,7 @@ elif [ ! -w "${TEMPDIR}" ]; then
 fi
 
 # Check that SSH login to remote server is successful
-if [ ! "$(ssh -oBatchMode=yes -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} echo test)" ]; then
+if [ ! "$(ssh -oBatchMode=yes -p "${REMOTEPORT}" "${REMOTEUSER}"@"${REMOTESERVER}" echo test)" ]; then
         log "Failed to login to ${REMOTEUSER}@${REMOTESERVER}"
         log "Make sure that your public key is in their authorized_keys"
         exit
@@ -61,19 +61,19 @@ STARTTIME=$(date +%s)
 TARFILE="${LOCALDIR}""$(hostname)"-"${BACKUPDATE}".tgz
 SQLFILE="${TEMPDIR}mysql_${BACKUPDATE}.sql"
 
-cd "${LOCALDIR}"
+cd "${LOCALDIR}" || exit
 
 ### END OF CHECKS ###
 
 ### MYSQL BACKUP ###
 
-if [ ! $(command -v mysqldump) ]; then
+if [ ! "$(command -v mysqldump)" ]; then
         log "mysqldump not found, not backing up MySQL!"
-elif [ -z $ROOTMYSQL ]; then
+elif [ -z "$ROOTMYSQL" ]; then
         log "MySQL root password not set, not backing up MySQL!"
 else
         log "Starting MySQL dump dated ${BACKUPDATE}"
-        mysqldump -u root -p${ROOTMYSQL} --all-databases > ${SQLFILE}
+        mysqldump -u root -p"${ROOTMYSQL}" --all-databases > "${SQLFILE}"
         log "MySQL dump complete"
 
         #Add MySQL backup to BACKUP list
@@ -89,7 +89,7 @@ log "Starting tar backup dated ${BACKUPDATE}"
 TARCMD="-zcf ${TARFILE} ${BACKUP[*]}"
 
 # Add exclusions to front of command
-for i in ${EXCLUDE[@]}; do
+for i in "${EXCLUDE[@]}"; do
         TARCMD="--exclude $i ${TARCMD}"
 done
 
@@ -99,7 +99,7 @@ tar ${TARCMD}
 # Encrypt tar file
 log "Encrypting backup"
 
-openssl enc -aes256 -in ${TARFILE} -out ${TARFILE}.enc -pass pass:${BACKUPPASS} -md sha1
+openssl enc -aes256 -in "${TARFILE}" -out "${TARFILE}".enc -pass pass:"${BACKUPPASS}" -md sha1
 log "Encryption completed"
 
 BACKUPSIZE=$(du -h "${TARFILE}" | cut -f1)
@@ -112,10 +112,10 @@ log "Tranferring tar backup to remote server"
 scp -P "${REMOTEPORT}" "${TARFILE}".enc "${REMOTEUSER}"@"${REMOTESERVER}":"${REMOTEDIR}"
 log "File transfer completed"
 
-if [ $(command -v mysqldump) ]; then
-        if [ ! -z ${ROOTMYSQL} ]; then
+if [ "$(command -v mysqldump)" ]; then
+        if [ ! -z "${ROOTMYSQL}" ]; then
                 log "Deleting temporary MySQL backup"
-                rm ${SQLFILE}
+                rm "${SQLFILE}"
         fi
 fi
 
@@ -124,8 +124,8 @@ fi
 ### RSYNC BACKUP ###
 
 log "Starting rsync backups"
-for i in ${RSYNCDIR[@]}; do
-        rsync -aqz --no-links --progress --delete --relative -e"ssh -p ${REMOTEPORT}" $i ${REMOTEUSER}@${REMOTESERVER}:${REMOTEDIR}
+for i in "${RSYNCDIR[@]}"; do
+        rsync -aqz --no-links --progress --delete --relative -e"ssh -p ${REMOTEPORT}" "$i" "${REMOTEUSER}"@"${REMOTESERVER}":"${REMOTEDIR}"
 done
 log "rsync backups complete"
 
