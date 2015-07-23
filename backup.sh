@@ -25,35 +25,35 @@ BINARIES=( cat cd command date dirname echo find openssl pwd realpath rm rsync s
 
 # Iterate over the list of binaries, and if one isn't found, abort
 for BINARY in "${BINARIES[@]}"; do
-        if [ ! "$(command -v "$BINARY")" ]; then
-                log "$BINARY is not installed. Install it and try again"
-                exit
-        fi
+    if [ ! "$(command -v "$BINARY")" ]; then
+        log "$BINARY is not installed. Install it and try again"
+        exit
+    fi
 done
 
 # Check if the backup folders exist and are writeable
 if [ ! -w "${LOCALDIR}" ]; then
-        log "${LOCALDIR} either doesn't exist or isn't writable"
-        log "Either fix or replace the LOCALDIR setting"
-        exit
+    log "${LOCALDIR} either doesn't exist or isn't writable"
+    log "Either fix or replace the LOCALDIR setting"
+    exit
 elif [ ! -w "${TEMPDIR}" ]; then
-        log "${TEMPDIR} either doesn't exist or isn't writable"
-        log "Either fix or replace the TEMPDIR setting"
-        exit
+    log "${TEMPDIR} either doesn't exist or isn't writable"
+    log "Either fix or replace the TEMPDIR setting"
+    exit
 fi
 
 # Check that SSH login to remote server is successful
 if [ ! "$(ssh -oBatchMode=yes -p "${REMOTEPORT}" "${REMOTEUSER}"@"${REMOTESERVER}" echo test)" ]; then
-        log "Failed to login to ${REMOTEUSER}@${REMOTESERVER}"
-        log "Make sure that your public key is in their authorized_keys"
-        exit
+    log "Failed to login to ${REMOTEUSER}@${REMOTESERVER}"
+    log "Make sure that your public key is in their authorized_keys"
+    exit
 fi
 
 # Check that remote directory exists and is writeable
 if ! ssh -p "${REMOTEPORT}" "${REMOTEUSER}"@"${REMOTESERVER}" test -w "${REMOTEDIR}" ; then
-        log "Failed to write to ${REMOTEDIR} on ${REMOTESERVER}"
-        log "Check file permissions and that ${REMOTEDIR} is correct"
-        exit
+    log "Failed to write to ${REMOTEDIR} on ${REMOTESERVER}"
+    log "Check file permissions and that ${REMOTEDIR} is correct"
+    exit
 fi
 
 BACKUPDATE=$(date -u +%Y-%m-%d-%H%M)
@@ -98,25 +98,25 @@ tar ${TARCMD}
 
 # Encrypt tar file
 log "Encrypting backup"
-
 openssl enc -aes256 -in "${TARFILE}" -out "${TARFILE}".enc -pass pass:"${BACKUPPASS}" -md sha1
 log "Encryption completed"
-
-BACKUPSIZE=$(du -h "${TARFILE}" | cut -f1)
-log "Tar backup complete. Filesize: ${BACKUPSIZE}"
 
 # Delete unencrypted tar
 rm "${TARFILE}"
 
+BACKUPSIZE=$(du -h "${TARFILE}".enc | cut -f1)
+log "Tar backup complete. Filesize: ${BACKUPSIZE}"
+
+# Transfer to remote server
 log "Tranferring tar backup to remote server"
 scp -P "${REMOTEPORT}" "${TARFILE}".enc "${REMOTEUSER}"@"${REMOTESERVER}":"${REMOTEDIR}"
 log "File transfer completed"
 
 if [ "$(command -v mysqldump)" ]; then
-        if [ ! -z "${ROOTMYSQL}" ]; then
-                log "Deleting temporary MySQL backup"
-                rm "${SQLFILE}"
-        fi
+    if [ ! -z "${ROOTMYSQL}" ]; then
+        log "Deleting temporary MySQL backup"
+        rm "${SQLFILE}"
+    fi
 fi
 
 ### END OF TAR BACKUP ###
@@ -125,7 +125,7 @@ fi
 
 log "Starting rsync backups"
 for i in "${RSYNCDIR[@]}"; do
-        rsync -aqz --no-links --progress --delete --relative -e"ssh -p ${REMOTEPORT}" "$i" "${REMOTEUSER}"@"${REMOTESERVER}":"${REMOTEDIR}"
+    rsync -aqz --no-links --progress --delete --relative -e"ssh -p ${REMOTEPORT}" "$i" "${REMOTEUSER}"@"${REMOTESERVER}":"${REMOTEDIR}"
 done
 log "rsync backups complete"
 
@@ -138,7 +138,6 @@ bash "${SCRIPTDIR}"/deleteoldbackups.sh
 
 log "Checking for REMOTE backups to delete..."
 bash "${SCRIPTDIR}"/deleteoldbackups.sh --remote
-
 
 ### END OF BACKUP DELETION ###
 
