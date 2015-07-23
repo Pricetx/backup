@@ -9,7 +9,7 @@ SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Provides the 'log' command to simultaneously log to
 # STDOUT and the log file with a single command
 log() {
-    echo "$(date -u +%Y-%m-%d-%H%M)" "$1" >> "deleted.log"
+    echo "$(date -u +%Y-%m-%d-%H%M)" "$1" >> "${LOGFILE}"
     if [ "$2" != "noecho" ]; then
         echo "$1"
     fi
