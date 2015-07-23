@@ -72,8 +72,8 @@ deleteBackups() {
                 
                 NDELETED=$(( 10#${NDELETED} + 1 ))
                 #Slightly dirty way of getting filesize, but it's the most portable (wc is slow)
-                LS=$(ls -l $f)
-                SPACEFREED=$(( 10#${SPACEFREED} + ${LS[4]} ))
+                LS=($(ls -l $f))
+                SPACEFREED=$(( 10#${SPACEFREED} + 10#${LS[4]} ))
 
             #Clean up old weeklies to monthlies (made on the 1st only)
             elif [[ ${FILEAGE} -gt ${AGEWEEKLIES} ]]; then
@@ -83,8 +83,8 @@ deleteBackups() {
                     log "$f held back as monthly backup"
                     
                     NKEPT=$(( 10#${NKEPT} + 1 ))
-                    LS=$(ls -l $f)
-                    SPACEUSED=$(( 10#${SPACEUSED} + ${LS[4]} ))
+                    LS=($(ls -l $f))
+                    SPACEUSED=$(( 10#${SPACEUSED} + 10#${LS[4]} ))
                 fi
 
             #Clean up old dailies to weeklies (made on the 1st, 8th, 15th, 22nd, 29th)
@@ -96,8 +96,8 @@ deleteBackups() {
                         log "$f held back as weekly backup"
                         
                         NKEPT=$(( 10#${NKEPT} + 1 ))
-                        LS=$(ls -l $f)
-                        SPACEUSED=$(( 10#${SPACEUSED} + ${LS[4]} ))
+                        LS=($(ls -l $f))
+                        SPACEUSED=$(( 10#${SPACEUSED} + 10#${LS[4]} ))
                     fi
                 done
 
@@ -107,8 +107,8 @@ deleteBackups() {
                 log "$f held back as daily backup"
                 
                 NKEPT=$(( 10#${NKEPT} + 1 ))
-                LS=$(ls -l $f)
-                SPACEUSED=$(( 10#${SPACEUSED} + ${LS[4]} ))
+                LS=($(ls -l $f))
+                SPACEUSED=$(( 10#${SPACEUSED} + 10#${LS[4]} ))
             fi
 
 
