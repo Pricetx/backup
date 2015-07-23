@@ -53,7 +53,7 @@ deleteBackups() {
     NKEPT=0
     SPACEFREED=0
     SPACEUSED=0
-    
+
     cd "${BACKUPDIR}"
     log "Checking for backups to delete"
 
@@ -69,7 +69,7 @@ deleteBackups() {
             if [[ ${FILEAGE} -gt ${AGEMONTHLIES} ]]; then
                 #Delete it - leave $KEEPFILE as NO
                 log "$f DELETED - was over ${AGEMONTHLIES} days old"
-                
+
                 NDELETED=$(( 10#${NDELETED} + 1 ))
                 #Slightly dirty way of getting filesize, but it's the most portable (wc is slow)
                 LS=($(ls -l $f))
@@ -81,7 +81,7 @@ deleteBackups() {
                     #Mark to be kept
                     KEEPFILE="YES"
                     log "$f held back as monthly backup"
-                    
+
                     NKEPT=$(( 10#${NKEPT} + 1 ))
                     LS=($(ls -l $f))
                     SPACEUSED=$(( 10#${SPACEUSED} + 10#${LS[4]} ))
@@ -94,7 +94,7 @@ deleteBackups() {
                         #Mark to be kept
                         KEEPFILE="YES"
                         log "$f held back as weekly backup"
-                        
+
                         NKEPT=$(( 10#${NKEPT} + 1 ))
                         LS=($(ls -l $f))
                         SPACEUSED=$(( 10#${SPACEUSED} + 10#${LS[4]} ))
@@ -105,7 +105,7 @@ deleteBackups() {
             else
                 KEEPFILE="YES"
                 log "$f held back as daily backup"
-                
+
                 NKEPT=$(( 10#${NKEPT} + 1 ))
                 LS=($(ls -l $f))
                 SPACEUSED=$(( 10#${SPACEUSED} + 10#${LS[4]} ))
@@ -120,7 +120,7 @@ deleteBackups() {
 
         fi
     done
-    
+
     # Output stats
     humanReadable ${SPACEFREED}; echo "Deleted ${NDELETED} backups, freeing ${HUMAN}"
     humanReadable ${SPACEUSED}; echo "${NKEPT} backups remain, taking up ${HUMAN}"
@@ -135,7 +135,7 @@ if [ "$1" == "--remote" ]; then
     echo "BACKUPHOSTNAME=$(hostname)" > /tmp/hostname
     cat "${SCRIPTDIR}"/backup.cfg /tmp/hostname "${SCRIPTDIR}"/deleteoldbackups.sh | ssh -T -p ${REMOTEPORT} ${REMOTEUSER}@${REMOTESERVER} "/usr/bin/env bash"
     rm /tmp/hostname
-	
+
 elif [ $# == 0 ]; then
     #Check if config is already loaded
     if [ "${BACKUPHOSTNAME}" ]; then
