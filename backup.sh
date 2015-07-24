@@ -89,10 +89,13 @@ log "Starting tar backup dated ${BACKUPDATE}"
 # Prepare tar command
 TARCMD="-zcf ${TARFILE} ${BACKUP[*]}"
 
-# Add exclusions to front of command
-for i in "${EXCLUDE[@]}"; do
-     TARCMD="--exclude $i ${TARCMD}"
-done
+# Check if there are any exclusions
+if [["x${EXCLUDE[@]}" != "x"]]; then
+    # Add exclusions to front of command
+    for i in "${EXCLUDE[@]}"; do
+        TARCMD="--exclude $i ${TARCMD}"
+    done
+fi
 
 # Run tar
 tar ${TARCMD}
