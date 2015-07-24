@@ -25,7 +25,7 @@ getFileDate() {
 
     if [ "${BACKUPHOSTNAME}" == "${FILEHOSTNAME}" ]; then
         if [[ "${FILEYEAR}" && "${FILEMONTH}" && "${FILEDAY}" && "${FILETIME}" ]]; then
-		    #Approximate a 30-day month and 365-day year
+            #Approximate a 30-day month and 365-day year
             FILEDAYS=$(( $((10#${FILEYEAR}*365)) + $((10#${FILEMONTH}*30)) + $((10#${FILEDAY})) ))
             FILEAGE=$(( 10#${DAYS} - 10#${FILEDAYS} ))
             return 0
@@ -68,13 +68,7 @@ deleteBackups() {
 
             #Delete all old monthlies
             if [[ ${FILEAGE} -gt ${AGEMONTHLIES} ]]; then
-                #Delete it - leave $KEEPFILE as NO
-                log "$f DELETED - was over ${AGEMONTHLIES} days old" "noecho"
-
-                NDELETED=$(( 10#${NDELETED} + 1 ))
-                #Slightly dirty way of getting filesize, but it's the most portable (wc is slow)
-                LS=($(ls -l "$f"))
-                SPACEFREED=$(( 10#${SPACEFREED} + 10#${LS[4]} ))
+                : #Delete it - leave $KEEPFILE as NO
 
             #Clean up old weeklies to monthlies (made on the 1st only)
             elif [[ ${FILEAGE} -gt ${AGEWEEKLIES} ]]; then
@@ -84,6 +78,7 @@ deleteBackups() {
                     log "$f held back as monthly backup" "noecho"
 
                     NKEPT=$(( 10#${NKEPT} + 1 ))
+                    #Slightly dirty way of getting filesize, but it's the most portable (wc is slow)
                     LS=($(ls -l "$f"))
                     SPACEUSED=$(( 10#${SPACEUSED} + 10#${LS[4]} ))
                 fi
@@ -91,7 +86,7 @@ deleteBackups() {
             #Clean up old dailies to weeklies (made on the 1st, 8th, 15th, 22nd, 29th)
             elif [[ ${FILEAGE} -gt ${AGEDAILIES} ]]; then
                 for i in 01 08 15 22 29; do
-                    if [ "${FILEDAY}" == $i ]; then 
+                    if [ "${FILEDAY}" == $i ]; then
                         #Mark to be kept
                         KEEPFILE="YES"
                         log "$f held back as weekly backup" "noecho"
@@ -116,7 +111,11 @@ deleteBackups() {
             if [ ${KEEPFILE} == "NO" ]; then
                 # Actually delete them
                 rm -f "$f"
-                log "$f DELETED - pruned for granular backup"
+                log "$f DELETED"
+
+                NDELETED=$(( 10#${NDELETED} + 1 ))
+                LS=($(ls -l "$f"))
+                SPACEFREED=$(( 10#${SPACEFREED} + 10#${LS[4]} ))
             fi
 
         fi
