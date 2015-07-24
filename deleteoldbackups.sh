@@ -25,7 +25,7 @@ getFileDate() {
 
     if [ "${BACKUPHOSTNAME}" == "${FILEHOSTNAME}" ]; then
         if [[ "${FILEYEAR}" && "${FILEMONTH}" && "${FILEDAY}" && "${FILETIME}" ]]; then
-                    #Approximate a 30-day month and 365-day year
+            #Approximate a 30-day month and 365-day year
             FILEDAYS=$(( $((10#${FILEYEAR}*365)) + $((10#${FILEMONTH}*30)) + $((10#${FILEDAY})) ))
             FILEAGE=$(( 10#${DAYS} - 10#${FILEDAYS} ))
             return 0
