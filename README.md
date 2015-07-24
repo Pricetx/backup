@@ -17,7 +17,11 @@ By default:
 * Weekly backups from Mondays are retained for the past month
 * Monthly backups from the first Monday of each month are retained for the past six months
 
-The retention lengths are adjustable in backup.cfg
+The retention lengths are adjustable in backup.cfg:
+
+If desired, the backup deletion can be run seperately:
+* To delete local backups, run "deleteoldbackups.sh"
+* To delete remote backups, run "deleteoldbackups.sh --remote"
 
 ##Use With cron
 
