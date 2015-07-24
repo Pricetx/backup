@@ -16,6 +16,9 @@ log() {
     fi
 }
 
+# Prepare "new" settings that might not be in backup.cfg
+SCPLIMIT=0
+
 # Load the backup settings
 source "${SCRIPTDIR}"/backup.cfg
 
@@ -89,10 +92,13 @@ log "Starting tar backup dated ${BACKUPDATE}"
 # Prepare tar command
 TARCMD="-zcf ${TARFILE} ${BACKUP[*]}"
 
-# Add exclusions to front of command
-for i in "${EXCLUDE[@]}"; do
-     TARCMD="--exclude $i ${TARCMD}"
-done
+# Check if there are any exclusions
+if [[ "x${EXCLUDE[@]}" != "x" ]]; then
+    # Add exclusions to front of command
+    for i in "${EXCLUDE[@]}"; do
+        TARCMD="--exclude $i ${TARCMD}"
+    done
+fi
 
 # Run tar
 tar ${TARCMD}
@@ -110,7 +116,13 @@ log "Tar backup complete. Filesize: ${BACKUPSIZE}"; log ""
 
 # Transfer to remote server
 log "Tranferring tar backup to remote server"
-scp -P "${REMOTEPORT}" "${TARFILE}".enc "${REMOTEUSER}"@"${REMOTESERVER}":"${REMOTEDIR}"
+
+# Check if bandwidth limiting is enabled
+if [ "${SCPLIMIT}" -gt 0 ]; then 
+    scp -l "${SCPLIMIT}" -P "${REMOTEPORT}" "${TARFILE}".enc "${REMOTEUSER}"@"${REMOTESERVER}":"${REMOTEDIR}"
+else
+    scp -P "${REMOTEPORT}" "${TARFILE}".enc "${REMOTEUSER}"@"${REMOTESERVER}":"${REMOTEDIR}"
+fi
 log "File transfer completed"; log ""
 
 if [ "$(command -v mysqldump)" ]; then
