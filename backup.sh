@@ -16,11 +16,19 @@ log() {
     fi
 }
 
+
+### LOAD IN CONFIG ###
+
 # Prepare "new" settings that might not be in backup.cfg
 SCPLIMIT=0
 
-# Load the backup settings
-source "${SCRIPTDIR}"/backup.cfg
+if [ "$1" == "--config" ]; then
+    #Load in config from specified file
+    source "$2"
+else
+    source "${SCRIPTDIR}"/backup.cfg
+fi
+
 
 ### CHECKS ###
 
