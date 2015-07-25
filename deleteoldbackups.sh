@@ -112,7 +112,7 @@ deleteBackups() {
                 SPACEFREED=$(( 10#${SPACEFREED} + 10#${LS[4]} ))
 
                 #Disable deletion for testing
-                #rm -f "$f"
+                rm -f "$f"
                 log "$f DELETED"
             fi
 
