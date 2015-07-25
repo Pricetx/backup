@@ -3,9 +3,6 @@
 #Ensure that all possible binary paths are checked
 PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
 
-#Directory the script is in (for later use)
-SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-
 
 log() {
     echo -e "$(date -u +%Y-%m-%d-%H%M)" "$1" >> "deleted.log"
@@ -113,8 +110,9 @@ deleteBackups() {
                 NDELETED=$(( 10#${NDELETED} + 1 ))
                 LS=($(ls -l "$f"))
                 SPACEFREED=$(( 10#${SPACEFREED} + 10#${LS[4]} ))
-                
-                rm -f "$f"
+
+                #Disable deletion for testing
+                #rm -f "$f"
                 log "$f DELETED"
             fi
 
@@ -126,15 +124,8 @@ deleteBackups() {
     humanReadable ${SPACEUSED}; log "${NKEPT} backups remain, taking up ${HUMAN}"
 }
 
-
-if [ "$1" == "--remote" ]; then
-    #Send the config and this script to the remote server to be run
-    source "${SCRIPTDIR}"/backup.cfg
-    echo "BACKUPHOSTNAME=$(hostname)" > /tmp/hostname
-    cat "${SCRIPTDIR}"/backup.cfg /tmp/hostname "${SCRIPTDIR}"/deleteoldbackups.sh | ssh -T -p "${REMOTEPORT}" "${REMOTEUSER}"@"${REMOTESERVER}" "/usr/bin/env bash"
-    rm /tmp/hostname
-
-elif [ $# == 0 ]; then
+runLocally() {
+    echo "DEBUG: LOCAL"
     #Check if config is already loaded
     if [ "${BACKUPHOSTNAME}" ]; then
         #We're running on the remote server - config already loaded
@@ -144,7 +135,7 @@ elif [ $# == 0 ]; then
         AGEMONTHLIES=${REMOTEAGEMONTHLIES}
     else
         #We're running locally - load the config
-        source "$(dirname "$(realpath "$0")")"/backup.cfg
+        source "${CONFIG}"
         BACKUPDIR=${LOCALDIR}
         AGEDAILIES=${LOCALAGEDAILIES}
         AGEWEEKLIES=${LOCALAGEWEEKLIES}
@@ -154,8 +145,56 @@ elif [ $# == 0 ]; then
 
     #Everything hereon is run irrespective of whether we're on the local or remote machine
     deleteBackups
+}
+
+runRemotely() {
+    echo "DEBUG: REMOTE"
+    #Send the config and this script to the remote server to be run
+    source "${CONFIG}"
+    echo "BACKUPHOSTNAME=$(hostname)" > /tmp/hostname
+    cat "${CONFIG}" /tmp/hostname "${SCRIPTDIR}"/deleteoldbackups.sh | ssh -T -p "${REMOTEPORT}" "${REMOTEUSER}"@"${REMOTESERVER}" "/usr/bin/env bash"
+    rm /tmp/hostname
+}
+
+showUsage() {
+    echo "Usage: $0 [--remote] [--config filename]"
+}
+
+# START OF SCRIPT
+
+# Directory the script is in (for later use)
+SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Default config location
+CONFIG="${SCRIPTDIR}"/backup.cfg
+
+
+# Check arguments
+if [ $# == 1 ] && [ "$1" == "--remote" ]; then
+    runRemotely
+
+elif [ $# == 2 ] && [ "$1" == "--config" ]; then
+    # Load in config and proceed locally
+    CONFIG="$2"
+    runLocally
+
+elif [ $# == 3 ]; then
+    # 3 args: remote + config. Check which way round they're issued
+    if [ "$1" == "--remote" ] && [ "$2" == "--config" ]; then
+        CONFIG="$3"
+        runRemotely
+    elif [ "$1" == "--config" ] && [ "$3" == "--remote" ]; then
+        CONFIG="$2"
+        runRemotely
+    else
+        # Invalid args
+        showUsage
+    fi
+
+elif [ $# == 0 ]; then
+    # No args, run locally
+    runLocally
 else
-    #Script has been called with invalid flags
-    echo "Usage: $0 [--remote]"
-    exit
+    # Invalid args
+    showUsage
 fi
