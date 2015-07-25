@@ -172,7 +172,8 @@ showUsage() {
     echo "Usage: $0 [--remote] [--config filename]"
 }
 
-# START OF SCRIPT
+
+### START OF SCRIPT ###
 
 # Directory the script is in (for later use)
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
