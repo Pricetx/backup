@@ -22,13 +22,31 @@ log() {
 # Prepare "new" settings that might not be in backup.cfg
 SCPLIMIT=0
 
+# Default config location
+CONFIG="${SCRIPTDIR}"/backup.cfg
+
 if [ "$1" == "--config" ]; then
-    #Load in config from specified file
-    source "$2"
-else
-    source "${SCRIPTDIR}"/backup.cfg
+    # Get config from specified file
+    CONFIG="$2"
+elif [ $# != 0 ]; then
+    # Invalid arguments
+    echo "Usage: $0 [--config filename]"
+    exit
 fi
 
+# Check config file exists
+if [ ! -e "${CONFIG}" ]; then
+    echo "Couldn't fine config file: ${CONFIG}"
+    exit
+fi
+
+# Load in config
+source "${CONFIG}"
+
+echo ${LOCALDIR}
+exit
+
+### END OF CONFIG ###
 
 ### CHECKS ###
 
