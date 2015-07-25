@@ -13,11 +13,24 @@ A simple backup script utilising OpenSSL, tar and rsync, written in bash.
 ##Backup Retention
 
 By default:
+
 * Daily backups are retained for the past week
 * Weekly backups from Mondays are retained for the past month
 * Monthly backups from the first Monday of each month are retained for the past six months
 
 The retention lengths are adjustable in backup.cfg
+
+##Arguments
+backup.sh:
+
+* --config [filename] : Specify a different configuration file (or location)
+
+deleteoldbackups.sh:
+
+* --config [filename] : Specify a different configuration file (or location)
+* --remote : Delete remote backups (local backups are deleted by default)
+
+Note that deleteoldbackups.sh is run both locally and remotely by backup.sh by default.
 
 ##Use With cron
 
