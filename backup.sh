@@ -43,9 +43,6 @@ fi
 # Load in config
 source "${CONFIG}"
 
-echo ${LOCALDIR}
-exit
-
 ### END OF CONFIG ###
 
 ### CHECKS ###
@@ -173,11 +170,11 @@ log "rsync backups complete"; log ""
 ### BACKUP DELETION ##
 
 log "Checking for LOCAL backups to delete..."
-bash "${SCRIPTDIR}"/deleteoldbackups.sh
+bash "${SCRIPTDIR}"/deleteoldbackups.sh --config "${CONFIG}"
 log ""
 
 log "Checking for REMOTE backups to delete..."
-bash "${SCRIPTDIR}"/deleteoldbackups.sh --remote
+bash "${SCRIPTDIR}"/deleteoldbackups.sh --config "${CONFIG}" --remote
 log ""
 
 ### END OF BACKUP DELETION ###
