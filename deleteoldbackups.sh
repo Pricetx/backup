@@ -128,13 +128,18 @@ runLocally() {
     echo "DEBUG: LOCAL"
     #Check if config is already loaded
     if [ "${BACKUPHOSTNAME}" ]; then
-        #We're running on the remote server - config already loaded
+        # We're running on the remote server - config already loaded
         BACKUPDIR=${REMOTEDIR}
         AGEDAILIES=${REMOTEAGEDAILIES}
         AGEWEEKLIES=${REMOTEAGEWEEKLIES}
         AGEMONTHLIES=${REMOTEAGEMONTHLIES}
     else
-        #We're running locally - load the config
+        # We're running locally - load the config
+        if [ ! -e "${CONFIG}" ]; then
+            echo "Couldn't fine config file: ${CONFIG}"
+            exit
+        fi
+
         source "${CONFIG}"
         BACKUPDIR=${LOCALDIR}
         AGEDAILIES=${LOCALAGEDAILIES}
@@ -150,6 +155,11 @@ runLocally() {
 runRemotely() {
     echo "DEBUG: REMOTE"
     #Send the config and this script to the remote server to be run
+    if [ ! -e "${CONFIG}" ]; then
+        echo "Couldn't fine config file: ${CONFIG}"
+        exit
+    fi
+
     source "${CONFIG}"
     echo "BACKUPHOSTNAME=$(hostname)" > /tmp/hostname
     cat "${CONFIG}" /tmp/hostname "${SCRIPTDIR}"/deleteoldbackups.sh | ssh -T -p "${REMOTEPORT}" "${REMOTEUSER}"@"${REMOTESERVER}" "/usr/bin/env bash"
