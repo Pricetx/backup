@@ -36,7 +36,7 @@ fi
 
 # Check config file exists
 if [ ! -e "${CONFIG}" ]; then
-    echo "Couldn't fine config file: ${CONFIG}"
+    echo "Couldn't find config file: ${CONFIG}"
     exit
 fi
 

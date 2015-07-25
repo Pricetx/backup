@@ -127,7 +127,7 @@ deleteBackups() {
 getAbsoluteConfig() {
     # Gets the absolute path of the config file
     if [ ! -e "${CONFIG}" ]; then
-        echo "Couldn't fine config file: ${CONFIG}"
+        echo "Couldn't find config file: ${CONFIG}"
         exit
     fi
 
