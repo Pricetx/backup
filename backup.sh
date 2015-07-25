@@ -16,11 +16,35 @@ log() {
     fi
 }
 
+
+### LOAD IN CONFIG ###
+
 # Prepare "new" settings that might not be in backup.cfg
 SCPLIMIT=0
 
-# Load the backup settings
-source "${SCRIPTDIR}"/backup.cfg
+# Default config location
+CONFIG="${SCRIPTDIR}"/backup.cfg
+
+if [ "$1" == "--config" ]; then
+    # Get config from specified file
+    CONFIG="$2"
+elif [ $# != 0 ]; then
+    # Invalid arguments
+    echo "Usage: $0 [--config filename]"
+    exit
+fi
+
+# Check config file exists
+if [ ! -e "${CONFIG}" ]; then
+    echo "Couldn't find config file: ${CONFIG}"
+    exit
+fi
+
+# Load in config
+CONFIG=$( realpath "${CONFIG}" )
+source "${CONFIG}"
+
+### END OF CONFIG ###
 
 ### CHECKS ###
 
@@ -147,11 +171,11 @@ log "rsync backups complete"; log ""
 ### BACKUP DELETION ##
 
 log "Checking for LOCAL backups to delete..."
-bash "${SCRIPTDIR}"/deleteoldbackups.sh
+bash "${SCRIPTDIR}"/deleteoldbackups.sh --config "${CONFIG}"
 log ""
 
 log "Checking for REMOTE backups to delete..."
-bash "${SCRIPTDIR}"/deleteoldbackups.sh --remote
+bash "${SCRIPTDIR}"/deleteoldbackups.sh --config "${CONFIG}" --remote
 log ""
 
 ### END OF BACKUP DELETION ###
