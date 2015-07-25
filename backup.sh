@@ -41,6 +41,7 @@ if [ ! -e "${CONFIG}" ]; then
 fi
 
 # Load in config
+CONFIG=$( realpath "${CONFIG}" )
 source "${CONFIG}"
 
 ### END OF CONFIG ###

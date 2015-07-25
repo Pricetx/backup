@@ -124,8 +124,17 @@ deleteBackups() {
     humanReadable ${SPACEUSED}; log "${NKEPT} backups remain, taking up ${HUMAN}"
 }
 
+getAbsoluteConfig() {
+    # Gets the absolute path of the config file
+    if [ ! -e "${CONFIG}" ]; then
+        echo "Couldn't fine config file: ${CONFIG}"
+        exit
+    fi
+
+    CONFIG=$( realpath "${CONFIG}" )
+}
+
 runLocally() {
-    echo "DEBUG: LOCAL"
     #Check if config is already loaded
     if [ "${BACKUPHOSTNAME}" ]; then
         # We're running on the remote server - config already loaded
@@ -135,12 +144,9 @@ runLocally() {
         AGEMONTHLIES=${REMOTEAGEMONTHLIES}
     else
         # We're running locally - load the config
-        if [ ! -e "${CONFIG}" ]; then
-            echo "Couldn't fine config file: ${CONFIG}"
-            exit
-        fi
-
+        getAbsoluteConfig
         source "${CONFIG}"
+        
         BACKUPDIR=${LOCALDIR}
         AGEDAILIES=${LOCALAGEDAILIES}
         AGEWEEKLIES=${LOCALAGEWEEKLIES}
@@ -153,14 +159,10 @@ runLocally() {
 }
 
 runRemotely() {
-    echo "DEBUG: REMOTE"
     #Send the config and this script to the remote server to be run
-    if [ ! -e "${CONFIG}" ]; then
-        echo "Couldn't fine config file: ${CONFIG}"
-        exit
-    fi
-
+    getAbsoluteConfig
     source "${CONFIG}"
+    
     echo "BACKUPHOSTNAME=$(hostname)" > /tmp/hostname
     cat "${CONFIG}" /tmp/hostname "${SCRIPTDIR}"/deleteoldbackups.sh | ssh -T -p "${REMOTEPORT}" "${REMOTEUSER}"@"${REMOTESERVER}" "/usr/bin/env bash"
     rm /tmp/hostname
