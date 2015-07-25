@@ -110,12 +110,12 @@ deleteBackups() {
 
             if [ ${KEEPFILE} == "NO" ]; then
                 # Actually delete them
-                rm -f "$f"
-                log "$f DELETED"
-
                 NDELETED=$(( 10#${NDELETED} + 1 ))
                 LS=($(ls -l "$f"))
                 SPACEFREED=$(( 10#${SPACEFREED} + 10#${LS[4]} ))
+                
+                rm -f "$f"
+                log "$f DELETED"
             fi
 
         fi
