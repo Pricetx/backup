@@ -1,8 +1,8 @@
-#Backup Script
+# Backup Script
 
 A simple backup script utilising OpenSSL, tar and rsync, written in bash.
 
-##Script Features
+## Script Features
 
 * Incremental backup retention
 * Backups are encrypted with AES256-cbc with SHA1 message-digest
@@ -10,7 +10,7 @@ A simple backup script utilising OpenSSL, tar and rsync, written in bash.
 * Backups are sent over SSH
 * Currently supports GNU/Linux and FreeBSD
 
-##Backup Retention
+## Backup Retention
 
 By default:
 
@@ -24,7 +24,7 @@ If desired, the backup deletion can be run seperately:
 * To delete local backups, run "deleteoldbackups.sh"
 * To delete remote backups, run "deleteoldbackups.sh --remote"
 
-##Arguments
+## Arguments
 backup.sh:
 
 * --config [filename] : Specify a different configuration file (or location)
@@ -36,7 +36,7 @@ deleteoldbackups.sh:
 
 Note that deleteoldbackups.sh is run both locally and remotely by backup.sh by default.
 
-##Use With cron
+## Use With cron
 
 If you're running this script from cron, make sure you add the following line to the top of your crontab:
 `PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin`
